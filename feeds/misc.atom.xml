@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="/" rel="alternate"></link><link href="/feeds/misc.atom.xml" rel="self"></link><id>/</id><updated>2014-12-06T18:48:00+09:00</updated><entry><title>The Beginning</title><link href="/the-beginning.html" rel="alternate"></link><updated>2014-12-06T18:48:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:,2014-12-06:the-beginning.html</id><summary type="html">&lt;p&gt;Hello, and welcome to the first post to the Rustlog!&lt;/p&gt;
+&lt;p&gt;For everyone &lt;em&gt;not&lt;/em&gt; interested about the author:
+I'm &lt;a href="http://mearie.org/about/kang-seonghoon.en"&gt;Kang Seonghoon&lt;/a&gt;, a Korean software developer doing funky things.
+In the world of Rust I'm probably best known for
+&lt;a href="https://github.com/lifthrasiir/rust-encoding"&gt;rust-encoding&lt;/a&gt;, a comprehensive character encoding library.
+I also happen to enjoy talking on Moznet #rust (as known as &lt;code&gt;Yurume&lt;/code&gt;).&lt;/p&gt;
+&lt;h2&gt;So what the hell is this blog?&lt;/h2&gt;
+&lt;p&gt;I have a separate personal &lt;a href="http://j.mearie.org/"&gt;journal&lt;/a&gt; in my website.
+Probably many of you wouldn't understand its contents;
+it's almost Korean only, and even though I've done some works to
+make the &lt;em&gt;whole&lt;/em&gt; website bilingual,
+the journal remains quite exclusive in Korean.
+(I do have some &lt;a href="http://j.mearie.org/tagged/english"&gt;English posts&lt;/a&gt; though.)&lt;/p&gt;
+&lt;p&gt;Still, I have a desire to write useful posts in English.
+That's why I sometimes write to &lt;a href="https://gist.github.com/lifthrasiir/"&gt;Gist&lt;/a&gt;.
+It is technically not a blog, but at least it is a comfortable place
+to write a Markdown post.
+I also have been motivated by the concept of "worklog"
+as a daily diary for logging the day's work.&lt;/p&gt;
+&lt;p&gt;So I'm going to give a shot.
+&lt;strong&gt;Every Rust-related post in English from now on will go here.
+Also, I'll try to write a short remainder about
+whatever I've done with Rust every day ("worklog").&lt;/strong&gt;
+I know this is very hard from the experience,
+but at least I'll try to do so.
+I'm kind of a yak-shaving personnel,
+but this time I chose to stick to &lt;a href="http://getpelican.com/"&gt;Pelican&lt;/a&gt;
+as it seems easy to install and &lt;em&gt;forget&lt;/em&gt; about it.&lt;/p&gt;
+&lt;p&gt;I'd appreciate any feedback on the post available here,
+but unless there is a link to the explicit feedback form,
+please direct any feedback to my &lt;a href="http://mearie.org/about/contact.en"&gt;personal email&lt;/a&gt;.
+I'm close to &lt;em&gt;hate&lt;/em&gt; the direct comments, so sorry about that.
+And obviously my writing solely represents my own opinion
+and not my employer's or organization's. :)&lt;/p&gt;</summary></entry></feed>
