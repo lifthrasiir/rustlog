@@ -23,45 +23,136 @@
         
 
             <header>
-                <h1><a href="../the-beginning.html" id="page-title">The Beginning</a></h1>
+                <h1><a href="../worklog-2014-12-06.html" id="page-title">Worklog 2014-12-06</a></h1>
                 <span id="sitename"><a href=".." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2014-12-06T18:48:00+09:00">2014-12-06 18:48 +09:00</time>            </header>
+<time datetime="2014-12-07T13:09:00+09:00">2014-12-07 13:09 +09:00</time>            </header>
 
             <article>
-                <p>Hello, and welcome to the first post to the Rustlog!</p>
-<p>For everyone <em>not</em> interested about the author:
-I'm <a href="http://mearie.org/about/kang-seonghoon.en">Kang Seonghoon</a>, a Korean software developer doing funky things.
-In the world of Rust I'm probably best known for
-<a href="https://github.com/lifthrasiir/rust-encoding">rust-encoding</a>, a comprehensive character encoding library.
-I also happen to enjoy talking on Moznet #rust (as known as <code>Yurume</code>).</p>
-<h2>So what the hell is this blog?</h2>
-<p>I have a separate personal <a href="http://j.mearie.org/">journal</a> in my website.
-Probably many of you wouldn't understand its contents;
-it's almost Korean only, and even though I've done some works to
-make the <em>whole</em> website bilingual,
-the journal remains quite exclusive in Korean.
-(I do have some <a href="http://j.mearie.org/tagged/english">English posts</a> though.)</p>
-<p>Still, I have a desire to write useful posts in English.
-That's why I sometimes write to <a href="https://gist.github.com/lifthrasiir/">Gist</a>.
-It is technically not a blog, but at least it is a comfortable place
-to write a Markdown post.
-I also have been motivated by the concept of "worklog"
-as a daily diary for logging the day's work.</p>
-<p>So I'm going to give a shot.
-<strong>Every Rust-related post in English from now on will go here.
-Also, I'll try to write a short remainder about
-whatever I've done with Rust every day ("worklog").</strong>
-I know this is very hard from the experience,
-but at least I'll try to do so.
-I'm kind of a yak-shaving personnel,
-but this time I chose to stick to <a href="http://getpelican.com/">Pelican</a>
-as it seems easy to install and <em>forget</em> about it.</p>
-<p>I'd appreciate any feedback on the post available here,
-but unless there is a link to the explicit feedback form,
-please direct any feedback to my <a href="http://mearie.org/about/contact.en">personal email</a>.
-I'm close to <em>hate</em> the direct comments, so sorry about that.
-And obviously my writing solely represents my own opinion
-and not my employer's or organization's. :)</p>            </article>
+                <p>I was continously working on <a href="https://github.com/rust-lang/rust/issues/15309">#15309</a>.
+Basically, Rustdoc has a link to the source code and
+<em>some</em> items have gotten their links incorrect.
+This is proved quite hard to solve, as I've outlined the cause,
+and I'm still figuring out how to solve that.</p>
+<h2>Wonderful world of metadata</h2>
+<p>It is a relatively hidden piece of the fact in Rust,
+but Rust compiler utilizes a <em>metadata</em>
+to track almost every information across multiple crates.</p>
+<p>In fact, it is not hard to see the metadata's very existence.
+The metadata occupies a custom section in the excutable files or
+a self-explanatory file name <code>rust.metadata.bin</code> in rlibs.
+Any standard utilities on those files can be used to see them:</p>
+<div class="highlight"><pre><span class="nv">$ </span>readelf /usr/local/rust/lib/libstd-4e7c5e5c.so -S <span class="p">|</span> grep rustc -A1
+  <span class="o">[</span>25<span class="o">]</span> .note.rustc       NOTE             00000000002ebaf0  000ebaf0
+       00000000001da82a  <span class="m">0000000000000000</span>  WA       <span class="m">0</span>     <span class="m">0</span>     16
+</pre></div>
+
+
+<p>Note that the metadata can be very huge.
+In this case, the section size is <code>0x1da82a</code> bytes, i.e. about 1.9 megs.
+How much is that? It's over 60% of the entire executable if you ask that.</p>
+<div class="highlight"><pre><span class="nv">$ </span>ls -al /usr/local/rust/lib/libstd-4e7c5e5c.so
+-rw-r--r-- <span class="m">1</span> arachneng <span class="m">3197472</span> Dec  <span class="m">5</span> 22:00 /usr/local/rust/lib/libstd-4e7c5e5c.so
+</pre></div>
+
+
+<p>Typical C/C++ compilers work on the simplitistic assumption,
+namely, they can <em>mangle</em> names to avoid any problem.
+So when you have a function named <code>f</code> with no argument and no return type,
+its name is (say) mangled into <code>_Z1fv</code> in some compilers and
+<code>?f@@YAXXZ</code> in other compilers, so that they cannot be linked against each other.
+Some compilers (notably G++) explicitly require that
+there is some <em>dummy</em> symbol like <code>__gxx_personality_v0</code>
+and otherwise the link fails.</p>
+<p>This <a href="https://en.wikipedia.org/wiki/Name_mangling">name mangling</a> is actually a good practice.
+Different compilers commonly have different ABIs,
+so mixing different ABIs in the same executable should be avoided.
+Many ABIs actually seem to be compatible but they often differ in details.</p>
+<p>The problem is that, the name mangling gives too little information.
+If you have a linker error, well, you have a variety of options to try.
+You may have tried to link from G++ to VC++.
+You may have your function name incorrect.
+You may have... an extra <code>namespace</code>. (Namespaces surely affect the name mangling.)
+You may have some other type incorrect, on which your function depends.
+Perhaps, you shouldn't link to that function at all, since it's a template.</p>
+<p>The metadata is a good complement to the name mangling.
+It has every type information to the public items,
+and (in the case of Rust) every trait implementation available.
+If the item has to be inlined (or generic), the <em>contents</em> of the item is
+also available to the metadata so that
+the compiler can inline its definition out of the original crate.</p>
+<p>And at the expense of this improvement,
+the metadata structure is <em>damn</em> complex and the user can go wrong.</p>
+<h2>Identifying Definitions</h2>
+<p>It seems that the metadata is nothing to do with the documentation.
+Unfortunately, #15309 is an example that the metadata is indeed important:
+it is hard to identify definitions across multiple crates.</p>
+<p>Consider one example.
+The trait <code>UnicodeChar</code> is actually available in three places:</p>
+<ul>
+<li><code>unicode::u_char::UnicodeChar</code> (private)</li>
+<li><code>unicode::char::UnicodeChar</code> (reexported, public)</li>
+<li><code>std::char::UnicodeChar</code> (reexported again, public)</li>
+</ul>
+<p>Since Rustdoc strips the private items,
+the primary documentation is available as <code>unicode::char::UnicodeChar</code>.
+Now, how does Rustdoc know of this reexport when generating the docs for <code>std</code>?</p>
+<p>Incredibly the answer is <em>no</em>―Rustdoc doesn't know about the reexports!
+What it actually does is to simply link to the original definition and
+hope it correctly redirects to the inlined reexports.
+Sounds risky, huh? But this is <a href="https://github.com/rust-lang/rust/blob/a31ad6b/src/librustdoc/html/render.rs#L104-L107">what Rustdoc actually handles reexports</a>.
+When Rustdoc has enough information to generate redirect pages(*), it will do;
+Otherwise it will use those redirect pages.</p>
+<p>(*) I should mention that the metadata obviously contains the reexports.
+Still, Rustdoc only sees the original items precisely because
+the metadata decoder doesn't directly show the links from the reexport to the item.
+And the original items contain, alas, a path to the original items and not reexports.</p>
+<p>Links to the source code poses another problem.
+The compiled crate itself doesn't have the source code, quite reasonably.
+In this matter, Rustdoc again relies on the prior incarnation of itself
+to generate suitable redirects.
+Now say that we have implemented <a href="https://github.com/rust-lang/rust/issues/12932">#12932</a>
+and we have multiple source links in the single documentation page.
+How would you do identify the correct link to redirect?</p>
+<p>The original code was using a unique identifier to each definition,
+generated shortly before the analysis phase ("phase 3").
+This is called a <code>NodeId</code> (or its cross-crate version, <code>DefId</code>)
+and Rustdoc-generated pages will check if
+the <code>gotosrc</code> parameter contains a matching <code>NodeId</code> to redirect.
+This should have been correct unless the following were correct:</p>
+<p><strong><code>NodeId</code>s change when you change the source code.</strong></p>
+<p>Well, this is primarily because <code>NodeId</code>s are used to identify a part of
+abstract syntax tree (AST).
+This is also why one cannot (normally) link to a recompiled crate (yet);
+the stable binary interface (ABI) would be awesome but it's a huge undertaking.</p>
+<p>It seemed that #15309 only appears in the <code>alloc</code> crate.
+Ultimately this was because, <code>rustc</code> sees <code>--cfg jemalloc</code> but not <code>rustdoc</code> doesn't.
+This small option mostly affects the <code>alloc</code> crate,
+causing <code>DefId</code>s change.</p>
+<p>Personally I learned lots about the metadata over the course of debugging,
+but only after I gave up and tried to make a <a href="https://gist.github.com/lifthrasiir/7fb50a52154ffc8c0b5e">custom metadata decoder</a> in Python.
+Then I realized that the metadata in question had a skewed <code>DefId</code> and
+instantly looked at the Makefile. Dang.
+I really hope to see a proper analysis tool (<a href="https://github.com/rust-lang/rust/issues/6912">#6912</a>) for the metadata.</p>
+<h2>Possible Solutions</h2>
+<p>It's indeed hard to identify definitions across multiple crates!
+We don't have a definite solution, and can only outline general directions:</p>
+<ol>
+<li>Rustdoc should not identify definitions via a <code>DefId</code>.</li>
+<li>Rustdoc should be able to generate documentations from the compiled crate.
+   (This is what <a href="#19606">I'm currently working on</a>.)</li>
+<li>In general, the metadata should have a good notion
+   to uniquely identify the definition independently of the source code change.</li>
+</ol>
+<p>Phew! This post went too far than I first imagined. Hope you enjoyed this.</p>            </article>
+                <section id="article-list">
+                    <h2>List of articles</h2>
+                    <ol>
+        
+
+ 
+            <li><a href="../the-beginning.html" rel="bookmark" title="Permalink to The Beginning">The Beginning</a></li>
+    </ol>
+    </section><!-- #article-list -->
 
         <footer>
             <nav>

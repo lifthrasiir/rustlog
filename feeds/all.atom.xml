@@ -1,5 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-06T18:48:00+09:00</updated><entry><title>The Beginning</title><link href="https://lifthrasiir.github.io/rustlog/the-beginning.html" rel="alternate"></link><updated>2014-12-06T18:48:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-06:rustlog/the-beginning.html</id><summary type="html">&lt;p&gt;Hello, and welcome to the first post to the Rustlog!&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-07T13:09:00+09:00</updated><entry><title>Worklog 2014-12-06</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-06.html" rel="alternate"></link><updated>2014-12-07T13:09:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-07:rustlog/worklog-2014-12-06.html</id><summary type="html">&lt;p&gt;I was continously working on &lt;a href="https://github.com/rust-lang/rust/issues/15309"&gt;#15309&lt;/a&gt;.
+Basically, Rustdoc has a link to the source code and
+&lt;em&gt;some&lt;/em&gt; items have gotten their links incorrect.
+This is proved quite hard to solve, as I've outlined the cause,
+and I'm still figuring out how to solve that.&lt;/p&gt;
+&lt;h2&gt;Wonderful world of metadata&lt;/h2&gt;
+&lt;p&gt;It is a relatively hidden piece of the fact in Rust,
+but Rust compiler utilizes a &lt;em&gt;metadata&lt;/em&gt;
+to track almost every information across multiple crates.&lt;/p&gt;
+&lt;p&gt;In fact, it is not hard to see the metadata's very existence.
+The metadata occupies a custom section in the excutable files or
+a self-explanatory file name &lt;code&gt;rust.metadata.bin&lt;/code&gt; in rlibs.
+Any standard utilities on those files can be used to see them:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;readelf /usr/local/rust/lib/libstd-4e7c5e5c.so -S &lt;span class="p"&gt;|&lt;/span&gt; grep rustc -A1
+  &lt;span class="o"&gt;[&lt;/span&gt;25&lt;span class="o"&gt;]&lt;/span&gt; .note.rustc       NOTE             00000000002ebaf0  000ebaf0
+       00000000001da82a  &lt;span class="m"&gt;0000000000000000&lt;/span&gt;  WA       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     16
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note that the metadata can be very huge.
+In this case, the section size is &lt;code&gt;0x1da82a&lt;/code&gt; bytes, i.e. about 1.9 megs.
+How much is that? It's over 60% of the entire executable if you ask that.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ls -al /usr/local/rust/lib/libstd-4e7c5e5c.so
+-rw-r--r-- &lt;span class="m"&gt;1&lt;/span&gt; arachneng &lt;span class="m"&gt;3197472&lt;/span&gt; Dec  &lt;span class="m"&gt;5&lt;/span&gt; 22:00 /usr/local/rust/lib/libstd-4e7c5e5c.so
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Typical C/C++ compilers work on the simplitistic assumption,
+namely, they can &lt;em&gt;mangle&lt;/em&gt; names to avoid any problem.
+So when you have a function named &lt;code&gt;f&lt;/code&gt; with no argument and no return type,
+its name is (say) mangled into &lt;code&gt;_Z1fv&lt;/code&gt; in some compilers and
+&lt;code&gt;?f@@YAXXZ&lt;/code&gt; in other compilers, so that they cannot be linked against each other.
+Some compilers (notably G++) explicitly require that
+there is some &lt;em&gt;dummy&lt;/em&gt; symbol like &lt;code&gt;__gxx_personality_v0&lt;/code&gt;
+and otherwise the link fails.&lt;/p&gt;
+&lt;p&gt;This &lt;a href="https://en.wikipedia.org/wiki/Name_mangling"&gt;name mangling&lt;/a&gt; is actually a good practice.
+Different compilers commonly have different ABIs,
+so mixing different ABIs in the same executable should be avoided.
+Many ABIs actually seem to be compatible but they often differ in details.&lt;/p&gt;
+&lt;p&gt;The problem is that, the name mangling gives too little information.
+If you have a linker error, well, you have a variety of options to try.
+You may have tried to link from G++ to VC++.
+You may have your function name incorrect.
+You may have... an extra &lt;code&gt;namespace&lt;/code&gt;. (Namespaces surely affect the name mangling.)
+You may have some other type incorrect, on which your function depends.
+Perhaps, you shouldn't link to that function at all, since it's a template.&lt;/p&gt;
+&lt;p&gt;The metadata is a good complement to the name mangling.
+It has every type information to the public items,
+and (in the case of Rust) every trait implementation available.
+If the item has to be inlined (or generic), the &lt;em&gt;contents&lt;/em&gt; of the item is
+also available to the metadata so that
+the compiler can inline its definition out of the original crate.&lt;/p&gt;
+&lt;p&gt;And at the expense of this improvement,
+the metadata structure is &lt;em&gt;damn&lt;/em&gt; complex and the user can go wrong.&lt;/p&gt;
+&lt;h2&gt;Identifying Definitions&lt;/h2&gt;
+&lt;p&gt;It seems that the metadata is nothing to do with the documentation.
+Unfortunately, #15309 is an example that the metadata is indeed important:
+it is hard to identify definitions across multiple crates.&lt;/p&gt;
+&lt;p&gt;Consider one example.
+The trait &lt;code&gt;UnicodeChar&lt;/code&gt; is actually available in three places:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;unicode::u_char::UnicodeChar&lt;/code&gt; (private)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;unicode::char::UnicodeChar&lt;/code&gt; (reexported, public)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;std::char::UnicodeChar&lt;/code&gt; (reexported again, public)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Since Rustdoc strips the private items,
+the primary documentation is available as &lt;code&gt;unicode::char::UnicodeChar&lt;/code&gt;.
+Now, how does Rustdoc know of this reexport when generating the docs for &lt;code&gt;std&lt;/code&gt;?&lt;/p&gt;
+&lt;p&gt;Incredibly the answer is &lt;em&gt;no&lt;/em&gt;―Rustdoc doesn't know about the reexports!
+What it actually does is to simply link to the original definition and
+hope it correctly redirects to the inlined reexports.
+Sounds risky, huh? But this is &lt;a href="https://github.com/rust-lang/rust/blob/a31ad6b/src/librustdoc/html/render.rs#L104-L107"&gt;what Rustdoc actually handles reexports&lt;/a&gt;.
+When Rustdoc has enough information to generate redirect pages(*), it will do;
+Otherwise it will use those redirect pages.&lt;/p&gt;
+&lt;p&gt;(*) I should mention that the metadata obviously contains the reexports.
+Still, Rustdoc only sees the original items precisely because
+the metadata decoder doesn't directly show the links from the reexport to the item.
+And the original items contain, alas, a path to the original items and not reexports.&lt;/p&gt;
+&lt;p&gt;Links to the source code poses another problem.
+The compiled crate itself doesn't have the source code, quite reasonably.
+In this matter, Rustdoc again relies on the prior incarnation of itself
+to generate suitable redirects.
+Now say that we have implemented &lt;a href="https://github.com/rust-lang/rust/issues/12932"&gt;#12932&lt;/a&gt;
+and we have multiple source links in the single documentation page.
+How would you do identify the correct link to redirect?&lt;/p&gt;
+&lt;p&gt;The original code was using a unique identifier to each definition,
+generated shortly before the analysis phase ("phase 3").
+This is called a &lt;code&gt;NodeId&lt;/code&gt; (or its cross-crate version, &lt;code&gt;DefId&lt;/code&gt;)
+and Rustdoc-generated pages will check if
+the &lt;code&gt;gotosrc&lt;/code&gt; parameter contains a matching &lt;code&gt;NodeId&lt;/code&gt; to redirect.
+This should have been correct unless the following were correct:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;NodeId&lt;/code&gt;s change when you change the source code.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Well, this is primarily because &lt;code&gt;NodeId&lt;/code&gt;s are used to identify a part of
+abstract syntax tree (AST).
+This is also why one cannot (normally) link to a recompiled crate (yet);
+the stable binary interface (ABI) would be awesome but it's a huge undertaking.&lt;/p&gt;
+&lt;p&gt;It seemed that #15309 only appears in the &lt;code&gt;alloc&lt;/code&gt; crate.
+Ultimately this was because, &lt;code&gt;rustc&lt;/code&gt; sees &lt;code&gt;--cfg jemalloc&lt;/code&gt; but not &lt;code&gt;rustdoc&lt;/code&gt; doesn't.
+This small option mostly affects the &lt;code&gt;alloc&lt;/code&gt; crate,
+causing &lt;code&gt;DefId&lt;/code&gt;s change.&lt;/p&gt;
+&lt;p&gt;Personally I learned lots about the metadata over the course of debugging,
+but only after I gave up and tried to make a &lt;a href="https://gist.github.com/lifthrasiir/7fb50a52154ffc8c0b5e"&gt;custom metadata decoder&lt;/a&gt; in Python.
+Then I realized that the metadata in question had a skewed &lt;code&gt;DefId&lt;/code&gt; and
+instantly looked at the Makefile. Dang.
+I really hope to see a proper analysis tool (&lt;a href="https://github.com/rust-lang/rust/issues/6912"&gt;#6912&lt;/a&gt;) for the metadata.&lt;/p&gt;
+&lt;h2&gt;Possible Solutions&lt;/h2&gt;
+&lt;p&gt;It's indeed hard to identify definitions across multiple crates!
+We don't have a definite solution, and can only outline general directions:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Rustdoc should not identify definitions via a &lt;code&gt;DefId&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Rustdoc should be able to generate documentations from the compiled crate.
+   (This is what &lt;a href="#19606"&gt;I'm currently working on&lt;/a&gt;.)&lt;/li&gt;
+&lt;li&gt;In general, the metadata should have a good notion
+   to uniquely identify the definition independently of the source code change.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Phew! This post went too far than I first imagined. Hope you enjoyed this.&lt;/p&gt;</summary></entry><entry><title>The Beginning</title><link href="https://lifthrasiir.github.io/rustlog/the-beginning.html" rel="alternate"></link><updated>2014-12-06T18:48:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-06:rustlog/the-beginning.html</id><summary type="html">&lt;p&gt;Hello, and welcome to the first post to the Rustlog!&lt;/p&gt;
 &lt;p&gt;For everyone &lt;em&gt;not&lt;/em&gt; interested about the author:
 I'm &lt;a href="http://mearie.org/about/kang-seonghoon.en"&gt;Kang Seonghoon&lt;/a&gt;, a Korean software developer doing funky things.
 In the world of Rust I'm probably best known for
