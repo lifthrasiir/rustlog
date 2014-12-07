@@ -61,7 +61,7 @@ Some compilers (notably G++) explicitly require that
 there is some <em>dummy</em> symbol like <code>__gxx_personality_v0</code>
 and otherwise the link fails.</p>
 <p>This <a href="https://en.wikipedia.org/wiki/Name_mangling">name mangling</a> is actually a good practice.
-Different compilers commonly have different ABIs,
+Different compilers commonly have different ABIs (Application Binary Interfaces),
 so mixing different ABIs in the same executable should be avoided.
 Many ABIs actually seem to be compatible but they often differ in details.</p>
 <p>The problem is that, the name mangling gives too little information.
@@ -78,7 +78,7 @@ If the item has to be inlined (or generic), the <em>contents</em> of the item is
 also available to the metadata so that
 the compiler can inline its definition out of the original crate.</p>
 <p>And at the expense of this improvement,
-the metadata structure is <em>damn</em> complex and the user can go wrong.</p>
+the metadata structure is <em>damn</em> complex and the client code can go wrong.</p>
 <h2>Identifying Definitions</h2>
 <p>It seems that the metadata is nothing to do with the documentation.
 Unfortunately, #15309 is an example that the metadata is indeed important:
@@ -103,7 +103,7 @@ Otherwise it will use those redirect pages.</p>
 Still, Rustdoc only sees the original items precisely because
 the metadata decoder doesn't directly show the links from the reexport to the item.
 And the original items contain, alas, a path to the original items and not reexports.</p>
-<p>Links to the source code poses another problem.
+<p>Links to the source code pose another problem.
 The compiled crate itself doesn't have the source code, quite reasonably.
 In this matter, Rustdoc again relies on the prior incarnation of itself
 to generate suitable redirects.
@@ -120,7 +120,7 @@ This should have been correct unless the following were correct:</p>
 <p>Well, this is primarily because <code>NodeId</code>s are used to identify a part of
 abstract syntax tree (AST).
 This is also why one cannot (normally) link to a recompiled crate (yet);
-the stable binary interface (ABI) would be awesome but it's a huge undertaking.</p>
+the stable ABI would be awesome but it's a huge undertaking.</p>
 <p>It seemed that #15309 only appears in the <code>alloc</code> crate.
 Ultimately this was because, <code>rustc</code> sees <code>--cfg jemalloc</code> but not <code>rustdoc</code> doesn't.
 This small option mostly affects the <code>alloc</code> crate,

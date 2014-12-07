@@ -35,7 +35,7 @@ Some compilers (notably G++) explicitly require that
 there is some &lt;em&gt;dummy&lt;/em&gt; symbol like &lt;code&gt;__gxx_personality_v0&lt;/code&gt;
 and otherwise the link fails.&lt;/p&gt;
 &lt;p&gt;This &lt;a href="https://en.wikipedia.org/wiki/Name_mangling"&gt;name mangling&lt;/a&gt; is actually a good practice.
-Different compilers commonly have different ABIs,
+Different compilers commonly have different ABIs (Application Binary Interfaces),
 so mixing different ABIs in the same executable should be avoided.
 Many ABIs actually seem to be compatible but they often differ in details.&lt;/p&gt;
 &lt;p&gt;The problem is that, the name mangling gives too little information.
@@ -52,7 +52,7 @@ If the item has to be inlined (or generic), the &lt;em&gt;contents&lt;/em&gt; of
 also available to the metadata so that
 the compiler can inline its definition out of the original crate.&lt;/p&gt;
 &lt;p&gt;And at the expense of this improvement,
-the metadata structure is &lt;em&gt;damn&lt;/em&gt; complex and the user can go wrong.&lt;/p&gt;
+the metadata structure is &lt;em&gt;damn&lt;/em&gt; complex and the client code can go wrong.&lt;/p&gt;
 &lt;h2&gt;Identifying Definitions&lt;/h2&gt;
 &lt;p&gt;It seems that the metadata is nothing to do with the documentation.
 Unfortunately, #15309 is an example that the metadata is indeed important:
@@ -77,7 +77,7 @@ Otherwise it will use those redirect pages.&lt;/p&gt;
 Still, Rustdoc only sees the original items precisely because
 the metadata decoder doesn't directly show the links from the reexport to the item.
 And the original items contain, alas, a path to the original items and not reexports.&lt;/p&gt;
-&lt;p&gt;Links to the source code poses another problem.
+&lt;p&gt;Links to the source code pose another problem.
 The compiled crate itself doesn't have the source code, quite reasonably.
 In this matter, Rustdoc again relies on the prior incarnation of itself
 to generate suitable redirects.
@@ -94,7 +94,7 @@ This should have been correct unless the following were correct:&lt;/p&gt;
 &lt;p&gt;Well, this is primarily because &lt;code&gt;NodeId&lt;/code&gt;s are used to identify a part of
 abstract syntax tree (AST).
 This is also why one cannot (normally) link to a recompiled crate (yet);
-the stable binary interface (ABI) would be awesome but it's a huge undertaking.&lt;/p&gt;
+the stable ABI would be awesome but it's a huge undertaking.&lt;/p&gt;
 &lt;p&gt;It seemed that #15309 only appears in the &lt;code&gt;alloc&lt;/code&gt; crate.
 Ultimately this was because, &lt;code&gt;rustc&lt;/code&gt; sees &lt;code&gt;--cfg jemalloc&lt;/code&gt; but not &lt;code&gt;rustdoc&lt;/code&gt; doesn't.
 This small option mostly affects the &lt;code&gt;alloc&lt;/code&gt; crate,
