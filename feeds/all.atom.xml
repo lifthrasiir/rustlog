@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-09T02:51:00+09:00</updated><entry><title>Worklog 2014-12-08</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-08.html" rel="alternate"></link><updated>2014-12-09T02:51:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-09:rustlog/worklog-2014-12-08.html</id><summary type="html">&lt;p&gt;After some wrestling with rustc, I've taken some refresh.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-10T00:17:00+09:00</updated><entry><title>Worklog 2014-12-09</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-09.html" rel="alternate"></link><updated>2014-12-10T00:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-10:rustlog/worklog-2014-12-09.html</id><summary type="html">&lt;p&gt;Okay, I've released &lt;a href="https://github.com/lifthrasiir/rust-soundchange"&gt;rust-soundchange&lt;/a&gt; with a basic documentation and tests.
+I've also pushed a &lt;a href="https://github.com/P1start/an-rs/pull/1"&gt;pull request&lt;/a&gt; to P1start's &lt;code&gt;an-rs&lt;/code&gt;,
+let's see if it really is accepted :)&lt;/p&gt;
+&lt;h2&gt;Notes on &lt;code&gt;english.sc&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;a href="http://zompist.com/spell.html"&gt;Mark Rosenfelder's article&lt;/a&gt; links to a computerized rule file,
+which I've used as a basis of rust-soundchange rules.
+After some debugging, however, I found that the following rule is incorrect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Incorrect&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="sr"&gt;/@/&lt;/span&gt;&lt;span class="n"&gt;VC&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="n"&gt;_l&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;
+&lt;span class="n"&gt;Correct&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;   &lt;span class="n"&gt;U&lt;/span&gt;&lt;span class="sr"&gt;/@/&lt;/span&gt;&lt;span class="n"&gt;VC&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="n"&gt;_l&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This particular rule corresponds to the rule 38,
+i.e. any vowel reduces to a schwa (&lt;code&gt;@&lt;/code&gt;) before final &lt;code&gt;l&lt;/code&gt; (as in &lt;code&gt;final&lt;/code&gt;),
+but only when it is not the only vowel in that word and
+&lt;em&gt;its sound value has been assigned by prior rules&lt;/em&gt;.
+The original rule has incorrectly used an "any vowel" (&lt;code&gt;V&lt;/code&gt;) variable
+in place of an "any &lt;em&gt;untranslated&lt;/em&gt; vowel" (&lt;code&gt;U&lt;/code&gt;) variable.&lt;/p&gt;
+&lt;p&gt;It seems that &lt;code&gt;english.out&lt;/code&gt; itself is generated via the fixed rules
+(and with this fix my implementation produces 100% exact output for this set)
+but Rosenfelder forgot to update &lt;code&gt;english.sc&lt;/code&gt;. Oops.&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-08</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-08.html" rel="alternate"></link><updated>2014-12-09T02:51:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-09:rustlog/worklog-2014-12-08.html</id><summary type="html">&lt;p&gt;After some wrestling with rustc, I've taken some refresh.
 I had a grand^Wstupid plan for improving &lt;a href="https://crates.io/crates/an"&gt;an&lt;/a&gt;,
 by implementing a better spell-to-pronounciation algorithm and
 using that to determine if the word starts with a vowel or not.
