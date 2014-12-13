@@ -23,35 +23,27 @@
         
 
             <header>
-                <h1><a href="../worklog-2014-12-09.html" id="page-title">Worklog 2014-12-09</a></h1>
+                <h1><a href="../worklog-2014-12-13.html" id="page-title">Worklog 2014-12-13</a></h1>
                 <span id="sitename"><a href=".." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2014-12-10T00:17:00+09:00">2014-12-10 00:17 +09:00</time>            </header>
+<time datetime="2014-12-13T23:59:00+09:00">2014-12-13 23:59 +09:00</time>            </header>
 
             <article>
-                <p>Okay, I've released <a href="https://github.com/lifthrasiir/rust-soundchange">rust-soundchange</a> with a basic documentation and tests.
-I've also pushed a <a href="https://github.com/P1start/an-rs/pull/1">pull request</a> to P1start's <code>an-rs</code>,
-let's see if it really is accepted :)</p>
-<h2>Notes on <code>english.sc</code></h2>
-<p><a href="http://zompist.com/spell.html">Mark Rosenfelder's article</a> links to a computerized rule file,
-which I've used as a basis of rust-soundchange rules.
-After some debugging, however, I found that the following rule is incorrect:</p>
-<div class="highlight"><pre><span class="n">Incorrect</span><span class="o">:</span> <span class="n">V</span><span class="sr">/@/</span><span class="n">VC</span><span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">_l</span><span class="err">#</span>
-<span class="n">Correct</span><span class="o">:</span>   <span class="n">U</span><span class="sr">/@/</span><span class="n">VC</span><span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">_l</span><span class="err">#</span>
-</pre></div>
-
-
-<p>This particular rule corresponds to the rule 38,
-i.e. any vowel reduces to a schwa (<code>@</code>) before final <code>l</code> (as in <code>final</code>),
-but only when it is not the only vowel in that word and
-<em>its sound value has been assigned by prior rules</em>.
-The original rule has incorrectly used an "any vowel" (<code>V</code>) variable
-in place of an "any <em>untranslated</em> vowel" (<code>U</code>) variable.</p>
-<p>It seems that <code>english.out</code> itself is generated via the fixed rules
-(and with this fix my implementation produces 100% exact output for this set)
-but Rosenfelder forgot to update <code>english.sc</code>. Oops.</p>            </article>
+                <p>Due to the personal concerns I haven't do much things, but at least...</p>
+<ul>
+<li>I've updated <a href="https://github.com/lifthrasiir/rust-encoding/">rust-encoding</a> and <a href="https://github.com/lifthrasiir/rust-chrono">rust-chrono</a> for opt-in <code>Copy</code>.</li>
+<li>I've pushed a small <a href="https://github.com/rust-lang/rust/issues/19719">fix</a> for <a href="https://github.com/rust-lang/rust/pull/19764">#19764</a>.</li>
+<li>I... think I've opened two issues (<a href="https://github.com/rust-lang/rust/issues/19723">#19723</a> and <a href="https://github.com/rust-lang/rust/issues/19762">#19762</a>) and
+  started to work on the former. Not much, though.</li>
+</ul>
+<p>Unfortunately I didn't have spare time for working on <a href="https://github.com/rust-lang/rust/pull/19606">#19606</a>.
+Maybe for the next week.</p>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="../worklog-2014-12-09.html" rel="bookmark" title="Permalink to Worklog 2014-12-09">Worklog 2014-12-09</a></li>
         
 
  
