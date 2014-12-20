@@ -23,23 +23,34 @@
         
 
             <header>
-                <h1><a href="../worklog-2014-12-13.html" id="page-title">Worklog 2014-12-13</a></h1>
+                <h1><a href="../worklog-2014-12-20.html" id="page-title">Worklog 2014-12-20</a></h1>
                 <span id="sitename"><a href=".." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2014-12-13T23:59:00+09:00">2014-12-13 23:59 +09:00</time>            </header>
+<time datetime="2014-12-21T00:01:00+09:00">2014-12-21 00:01 +09:00</time>            </header>
 
             <article>
-                <p>Due to the personal concerns I haven't do much things, but at least...</p>
+                <p>This week we saw another series of breakages via the macro syntax reform. :)
+I still didn't have much time to keep up,
+so I mostly did the minimal maintenance work,
+but still there are some significant tasks I've done this week:</p>
 <ul>
-<li>I've updated <a href="https://github.com/lifthrasiir/rust-encoding/">rust-encoding</a> and <a href="https://github.com/lifthrasiir/rust-chrono">rust-chrono</a> for opt-in <code>Copy</code>.</li>
-<li>I've pushed a small <a href="https://github.com/rust-lang/rust/issues/19719">fix</a> for <a href="https://github.com/rust-lang/rust/pull/19764">#19764</a>.</li>
-<li>I... think I've opened two issues (<a href="https://github.com/rust-lang/rust/issues/19723">#19723</a> and <a href="https://github.com/rust-lang/rust/issues/19762">#19762</a>) and
-  started to work on the former. Not much, though.</li>
-</ul>
-<p>Unfortunately I didn't have spare time for working on <a href="https://github.com/rust-lang/rust/pull/19606">#19606</a>.
-Maybe for the next week.</p>            </article>
+<li><a href="https://github.com/lifthrasiir/rust-encoding/commit/1803d8a7a7e442af2ecc7ea3a3cc419562a0276a">Encoding 0.2.8</a> has been released.
+  This is a significant, non-language-change fix due to
+  the recent change to the Encoding specification.
+  I've found a <a href="https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675">spec bug</a> while working on that.</li>
+<li>I've written a small <a href="https://github.com/rust-lang/rfcs/pull/532">RFC</a> for
+  changing the <code>mod</code> keyword in <code>use</code> to the <code>self</code> keyword.
+  This is my first RFC ever, so I'm glad the writing seems fine enough.</li>
+<li>I worked on the floating-point printing code of <a href="https://github.com/lifthrasiir/rust-strconv">rust-strconv</a>
+  during the Korean Rust meetup today.
+  I think I can release the initial version this week.</li>
+</ul>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="../worklog-2014-12-13.html" rel="bookmark" title="Permalink to Worklog 2014-12-13">Worklog 2014-12-13</a></li>
         
 
  

@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-13T23:59:00+09:00</updated><entry><title>Worklog 2014-12-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-13.html" rel="alternate"></link><updated>2014-12-13T23:59:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-13:rustlog/worklog-2014-12-13.html</id><summary type="html">&lt;p&gt;Due to the personal concerns I haven't do much things, but at least...&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-21T00:01:00+09:00</updated><entry><title>Worklog 2014-12-20</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-20.html" rel="alternate"></link><updated>2014-12-21T00:01:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-21:rustlog/worklog-2014-12-20.html</id><summary type="html">&lt;p&gt;This week we saw another series of breakages via the macro syntax reform. :)
+I still didn't have much time to keep up,
+so I mostly did the minimal maintenance work,
+but still there are some significant tasks I've done this week:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/lifthrasiir/rust-encoding/commit/1803d8a7a7e442af2ecc7ea3a3cc419562a0276a"&gt;Encoding 0.2.8&lt;/a&gt; has been released.
+  This is a significant, non-language-change fix due to
+  the recent change to the Encoding specification.
+  I've found a &lt;a href="https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675"&gt;spec bug&lt;/a&gt; while working on that.&lt;/li&gt;
+&lt;li&gt;I've written a small &lt;a href="https://github.com/rust-lang/rfcs/pull/532"&gt;RFC&lt;/a&gt; for
+  changing the &lt;code&gt;mod&lt;/code&gt; keyword in &lt;code&gt;use&lt;/code&gt; to the &lt;code&gt;self&lt;/code&gt; keyword.
+  This is my first RFC ever, so I'm glad the writing seems fine enough.&lt;/li&gt;
+&lt;li&gt;I worked on the floating-point printing code of &lt;a href="https://github.com/lifthrasiir/rust-strconv"&gt;rust-strconv&lt;/a&gt;
+  during the Korean Rust meetup today.
+  I think I can release the initial version this week.&lt;/li&gt;
+&lt;/ul&gt;</summary></entry><entry><title>Worklog 2014-12-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-13.html" rel="alternate"></link><updated>2014-12-13T23:59:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-13:rustlog/worklog-2014-12-13.html</id><summary type="html">&lt;p&gt;Due to the personal concerns I haven't do much things, but at least...&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;I've updated &lt;a href="https://github.com/lifthrasiir/rust-encoding/"&gt;rust-encoding&lt;/a&gt; and &lt;a href="https://github.com/lifthrasiir/rust-chrono"&gt;rust-chrono&lt;/a&gt; for opt-in &lt;code&gt;Copy&lt;/code&gt;.&lt;/li&gt;
 &lt;li&gt;I've pushed a small &lt;a href="https://github.com/rust-lang/rust/issues/19719"&gt;fix&lt;/a&gt; for &lt;a href="https://github.com/rust-lang/rust/pull/19764"&gt;#19764&lt;/a&gt;.&lt;/li&gt;
