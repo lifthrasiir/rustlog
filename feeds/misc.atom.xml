@@ -61,7 +61,7 @@ both in the performance (up to 1000x faster) and the accuracy.
 I've exhaustively verified that
 Grisu for &lt;code&gt;f32&lt;/code&gt; returns the same result as Dragon when it does give a result.
 Just out of curiosity, I've also counted how many &lt;code&gt;f32&lt;/code&gt; does return &lt;code&gt;None&lt;/code&gt;;
-there are precisely 17,763,160 such values out of 2,121,451,879 finite values.
+there are precisely 17,763,160 such values out of 2,139,095,039 finite values.
 I have some idea for improving on severe cases &lt;sup id="fnref:1"&gt;&lt;a class="footnote-ref" href="#fn:1" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;
 but that would be another story.&lt;/p&gt;
 &lt;p&gt;There are two more possible modes of floating point printing.
