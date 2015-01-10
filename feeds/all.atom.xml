@@ -1,5 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2014-12-21T00:01:00+09:00</updated><entry><title>Worklog 2014-12-20</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-20.html" rel="alternate"></link><updated>2014-12-21T00:01:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-21:rustlog/worklog-2014-12-20.html</id><summary type="html">&lt;p&gt;This week we saw another series of breakages via the macro syntax reform. :)
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-11T03:51:00+09:00</updated><entry><title>Worklog 2015-01-10</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-10.html" rel="alternate"></link><updated>2015-01-11T03:51:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-11:rustlog/worklog-2015-01-10.html</id><summary type="html">&lt;p&gt;Okay, I was so frantic about the language updates and
+went to (mostly) the library maintenance mode.
+If you saw &lt;code&gt;encoding&lt;/code&gt; or &lt;code&gt;chrono&lt;/code&gt; from &lt;a href="https://crates.io/"&gt;crates.io&lt;/a&gt; a lot,
+that's because I tended to update per &lt;em&gt;each&lt;/em&gt; breaking nightly.&lt;/p&gt;
+&lt;p&gt;Anyways, we've finally got &lt;a href="http://blog.rust-lang.org/2015/01/09/Rust-1.0-alpha.html"&gt;1.0.0 alpha&lt;/a&gt; and
+I can finally refrain from simply keeping libraries up.
+I'm now working on Chrono 0.2, which will have a new &lt;code&gt;Offset&lt;/code&gt; design.&lt;/p&gt;
+&lt;h2&gt;Grisu and rust-strconv&lt;/h2&gt;
+&lt;p&gt;By the way, what happened to &lt;a href="https://github.com/lifthrasiir/rust-strconv/"&gt;rust-strconv&lt;/a&gt;?
+In the previous (i.e. 3 week old) post
+I've said the initial version of Grisu can be released within a week.
+That was a serious misprediction and it actually took &lt;a href="https://github.com/lifthrasiir/rust-strconv/commit/81e4f157b90191ef335c2ad692e7ebd34221a367"&gt;two full weeks&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Grisu by itself is a simple algorithm to understand.
+It first scales the input into a certain convenient range
+(while keeping the exponent, obviously),
+so that the range can be easily fit to &lt;code&gt;u64&lt;/code&gt;.
+It then maintains two approximate ranges
+for the actual range in which values would round to that number;
+one overestimates, another underestimates.
+Quoting the diagram in the comments:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;        +- actual range of minus
+  | &amp;lt;---|---------------------- unsafe region --------------------------&amp;gt; |
+  |     |                                                                 |
+  |  |&amp;lt;---&amp;gt;|  | &amp;lt;--------------- safe region ---------------&amp;gt; |           |
+  |  |     |  |                                               |           |
+  |1 ulp|1 ulp|                 |1 ulp|1 ulp|                 |1 ulp|1 ulp|
+  |&amp;lt;---&amp;gt;|&amp;lt;---&amp;gt;|                 |&amp;lt;---&amp;gt;|&amp;lt;---&amp;gt;|                 |&amp;lt;---&amp;gt;|&amp;lt;---&amp;gt;|
+  |-----|-----|-------...-------|-----|-----|-------...-------|-----|-----|
+  |   minus   |                 |     v     |                 |   plus    |
+minus1     minus0           v - 1 ulp   v + 1 ulp           plus0       plus1
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Both the scaled value and ranges are repeatedly narrowed down
+until we are out of significant digits.
+(There is one important inequality proved in the paper
+which can be used to quickly test this.)
+At this stage we have &lt;em&gt;one&lt;/em&gt; possible shortest representation,
+so we try other representations to find the shortest representation
+which is also closest to the actual value.
+Finally, we can verify that it actually is in the underestimated range
+so we can safely return it.
+Each step has its own rounding error,
+but it is well characterized so we account for that.&lt;/p&gt;
+&lt;p&gt;The problem with implementing Grisu is not the complexity;
+it's rather an analysis, which is very unwieldy to understand.
+For example, the implementation shouldn't overflow,
+and Grisu code actively avoids that,
+but both the paper and the &lt;a href="https://github.com/v8/v8-git-mirror/blob/master/src/fast-dtoa.cc"&gt;code&lt;/a&gt; is shallow in details.
+The code has an extensive documentation, but not a proof,
+and it is very hard to be sure on edge cases.
+At the end, it took almost a month to fully understand and write
+&lt;a href="https://github.com/lifthrasiir/rust-strconv/blob/5cbbb53/src/flt2dec/strategy/grisu.rs#L212-L476"&gt;every required constraint&lt;/a&gt; in implementations down.
+Frankly speaking, my comments wouldn't really help anyway
+if you are to write your own reimplementation of Grisu,
+but at least it should guide potential reviewers.&lt;/p&gt;
+&lt;p&gt;Fortunately, my attempt has paid off.
+Combined with Dragon it swiftly overshadows the original naive implementation
+both in the performance (up to 1000x faster) and the accuracy.
+I've exhaustively verified that
+Grisu for &lt;code&gt;f32&lt;/code&gt; returns the same result as Dragon when it does give a result.
+Just out of curiosity, I've also counted how many &lt;code&gt;f32&lt;/code&gt; does return &lt;code&gt;None&lt;/code&gt;;
+there are precisely 17,763,160 such values out of 2,121,451,879 finite values.
+I have some idea for improving on severe cases &lt;sup id="fnref:1"&gt;&lt;a class="footnote-ref" href="#fn:1" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;
+but that would be another story.&lt;/p&gt;
+&lt;p&gt;There are two more possible modes of floating point printing.
+Grisu-like algorithm can be used to quickly try to print
+a predefined number of significant digits
+or up to certain number of digits after a decimal point if possible.
+I have a working code to do the former (with an informal proof in progress),
+but it seems not to fit well to the common interface shared by Dragon.
+The common interface can notify that the following digits are zeroes,
+but it is not very obvious that Grisu can report &lt;code&gt;None&lt;/code&gt; in that case.
+(Grisu cannot really give the exact answer in this case.)
+I'm currently studying the C implementation for possible resolution.&lt;/p&gt;
+&lt;div class="footnote"&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id="fn:1"&gt;
+&lt;p&gt;In the worst case, 50% of 2^23 &lt;code&gt;f32&lt;/code&gt; values between 2^21 and 2^22
+  return &lt;code&gt;None&lt;/code&gt; (it's 0.8% in the full range, for comparison).
+  This is mostly because Grisu's inability to handle
+  the exact halfway cases very common to that range.
+  Note that this range is relatively close to 1 (than many others),
+  so it can impact the real world performance of Grisu.&amp;#160;&lt;a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text"&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;</summary></entry><entry><title>Worklog 2014-12-20</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-20.html" rel="alternate"></link><updated>2014-12-21T00:01:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-21:rustlog/worklog-2014-12-20.html</id><summary type="html">&lt;p&gt;This week we saw another series of breakages via the macro syntax reform. :)
 I still didn't have much time to keep up,
 so I mostly did the minimal maintenance work,
 but still there are some significant tasks I've done this week:&lt;/p&gt;
