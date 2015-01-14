@@ -170,8 +170,9 @@ footer {
   color: #CCC;
   font-family: helvetica, sans-serif;
   font-size: 13px;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   margin-left: 20px;
+  padding: 1px;
 }
 
 /* line 132, ../../compass/src/main.scss */
@@ -180,6 +181,10 @@ footer li {
 }
 
 /* line 135, ../../compass/src/main.scss */
-footer p {
+footer p#theme-credit {
   text-align: right;
+}
+
+footer p {
+  margin: 15px 20px;
 }
