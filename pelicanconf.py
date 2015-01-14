@@ -28,6 +28,7 @@ LINKS = [('mearie.org', 'http://mearie.org/')]
 SOCIAL = []
 
 DEFAULT_PAGINATION = 3
+DIRECT_TEMPLATES = ('index', 'archives')
 
 # Uncomment following line if you want document-relative URLs when developing
 RELATIVE_URLS = True

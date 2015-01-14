@@ -27,19 +27,7 @@
         {% endblock %}
 
         <footer>
-            <nav>
-                <ul>
-                {% for page in PAGES %}
-                    <li><a href="{{ SITEURL }}/{{ page.url }}">{{ page.title }}</a>{% if not loop.last %} ::{% endif %}</li>
-                {% endfor %}
-                {% if categories|length > 1 %}
-                    <li>:: <a href="{{ SITEURL }}/categories.html">Categories</a></li>
-                {% endif %}
-                {% if tags|length > 1 %}
-                    <li>:: <a href="{{ SITEURL }}/tags.html">Tags</a></li>
-                {% endif %}
-                </ul>
-            </nav>
+                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It primarily is a daily worklog of whatever he has done with Rust every day. See also <a href="{{ SITEURL }}/archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
                 <p id="theme-credit">Proudly powered by <a href="http://docs.notmyidea.org/alexis/pelican/">pelican</a></p>
         </footer>
 
