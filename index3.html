@@ -23,210 +23,35 @@
         
 
             <header>
-                <h1><a href="./worklog-2015-01-13.html" id="page-title">Worklog 2015-01-13</a></h1>
+                <h1><a href="./worklog-2015-01-14.html" id="page-title">Worklog 2015-01-14</a></h1>
                 <span id="sitename"><a href="." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2015-01-14T02:19:00+09:00">2015-01-14 02:19 +09:00</time>            </header>
+<time datetime="2015-01-15T02:17:00+09:00">2015-01-15 02:17 +09:00</time>            </header>
 
             <article>
-                <p>I've finally got the initial design of <a href="https://github.com/lifthrasiir/rust-chrono/tree/0.2/">Chrono 0.2</a> working.
-It took so much time, partially because
-I'm working on dozens of other projects including Rust libraries.
-It solves one of the major annoyance with Chrono,
-so I'm glad that this new design is promising.</p>
-<h2>Time zones in Chrono 0.1</h2>
-<p>As always, I start by pointing to
-<a href="http://naggum.no/lugm-time.html">Erik Naggum's excellent essay about date and time</a>.
-(Yes, I'm terrible at story telling and I won't say a lot about that.)
-Most importantly, the core aspect of time zone is that
-it is ultimately a political creation rather than a natural necessity.
-This complicates lots of things,
-though Author David Olson and others have done
-a <a href="https://www.iana.org/time-zones">tremendously important work</a> in this regard.</p>
-<p>There are several problems with time zones:</p>
-<ol>
-<li>There is no reliable way to handle the local date in the future.</li>
-<li>There can exist a local date which occurred in two or more instants.</li>
-<li>There can exist a local date which never has been occurred.</li>
-<li>The conversion process itself is seriously annoying
-   and easy to make a mistake.</li>
-</ol>
-<p>(If you are interested in the timekeeping,
-you'll realize that this list equally applies to leap seconds.
-I had to deal with them in Chrono as well,
-and chose to make them invisible to the normal usage.)</p>
-<p>In fact, Chrono's original <code>Offset</code> design
-does explicitly account for these problems.
-In Chrono, the local date is a concept
-only meaningful to accessors and formatting routines,
-eliminating the very source of 1.
-The possibility of 2 and 3 is handled via the <code>LocalResult</code> enum,
-while 4 is handled via... delegating <em>everything</em> to the <code>Offset</code>.
-This decision is partly because
-we would only have a handful number of <code>Offset</code> implementations,
-so we have to implement them anyway.
-In the end, we had something like this:</p>
-<div class="highlight"><pre><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">local_minus_utc</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Duration</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">from_local_date</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Date</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">&gt;&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">from_local_time</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Time</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">&gt;&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">from_local_datetime</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDateTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">DateTime</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">&gt;&gt;</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">to_local_date</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">NaiveDate</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">to_local_time</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">NaiveTime</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">to_local_datetime</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDateTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">NaiveDateTime</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">ymd</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">year</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">month</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w"> </span><span class="n">day</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Date</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="c1">// other constructors follow</span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="n">DateTime</span><span class="o">&lt;</span><span class="n">Off</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">datetime</span><span class="o">:</span><span class="w"> </span><span class="n">NaiveDateTime</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">offset</span><span class="o">:</span><span class="w"> </span><span class="n">Off</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="c1">// Date and Time follows</span>
-</pre></div>
-
-
-<p>This sounds good.
-You can put the offset data into the timezone-aware <code>DateTime</code>,
-and use it to convert to the local date (<code>to_local_date</code>).
-In the converse, <code>DateTime</code> has to be created from <code>Offset</code>
-so that it converts to the internal representation in UTC
-(<code>from_local_date</code>).</p>
-<p>But you might wonder:
-why is <code>local_minus_utc</code> separate from <code>to_local_datetime</code>?
-The latter can be implemented via the former, right?
-Yes! In the current implementation the latter is redundant.
-And this redundancy suggests a bigger problem.</p>
-<p>Originally, <code>to_local_datetime</code> was to be used
-in the absence of the exact offset to UTC.
-This alone is enough for converting UTC to the local time,
-and it is still used in the <code>Offset</code> conversion
-where the original value is converted to UTC then to the target time zone.
-But this is inefficient,
-especially if we have a large table of zone transitions.
-Therefore we have <code>local_minus_utc</code>
-for caching the calculated <em>current</em> offset.
-The caller was expected to call <code>local_minus_utc</code>
-for converting the current value to UTC
-and <code>to_local_datetime</code> etc. for other cases.
-For the fixed-offset time zones like <code>UTC</code>
-these methods will be largely a simple arithmetic,
-so we only pay what we use.</p>
-<p>In the reality this scheme didn't work well.
-<code>Local</code> was an example of the glaring problem;
-since it has to cache the value, it should have a field,
-but that meant that we need to create a <code>Local</code> instance
-every time we convert to the local date!
-This defies the simple interface like <code>dt.with_offset(UTC)</code>,
-and since such <code>Local</code> instance doesn't know about the exact offset,
-we have a separate flag indicating the offset is correct or not.
-(In Rust, this would translate to <code>Option&lt;FixedOffset&gt;</code>.)
-This even breaks the original premise of
-"only paying what we actually use".</p>
-<p>After I realized this problem, I'd tried several solutions
-and spectacularly failed.
-It was clear that we really need two kinds of types,
-but I was not sure how to do that.</p>
-<h2>Time zones in Chrono 0.2</h2>
-<p>Associated types, originally proposed in <a href="https://github.com/rust-lang/rfcs/blob/master/text/0195-associated-items.md">RFC #195</a>, were
-a game changer for this problem.
-They allow for two types to be smoothly connected in the compile time.
-The resulting design is as follows:</p>
-<div class="highlight"><pre><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Sized</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fmt</span><span class="o">::</span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">local_minus_utc</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Duration</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">TimeZone</span><span class="o">:</span><span class="w"> </span><span class="nb">Sized</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="n">Offset</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">from_offset</span><span class="p">(</span><span class="n">offset</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Self</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_local_date</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_local_time</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_local_datetime</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDateTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_utc_date</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_utc_time</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">offset_from_utc_datetime</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">utc</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDateTime</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Self</span><span class="o">::</span><span class="n">Offset</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="c1">// helpers and constructors follow</span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="n">DateTime</span><span class="o">&lt;</span><span class="n">Tz</span><span class="o">:</span><span class="w"> </span><span class="n">TimeZone</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">datetime</span><span class="o">:</span><span class="w"> </span><span class="n">NaiveDateTime</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">offset</span><span class="o">:</span><span class="w"> </span><span class="n">Tz</span><span class="o">::</span><span class="n">Offset</span><span class="p">,</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="c1">// Date and Time follows</span>
-</pre></div>
-
-
-<p>This new design directly shows that
-we are dealing with two different types!
-<code>TimeZone</code> creates an <code>Offset</code> which is a storage-oriented type,
-which can be converted back to the <code>TimeZone</code> via <code>from_offset</code>.
-<code>TimeZone</code> is used for creating date and time values,
-while <code>Offset</code> is used for converting to the local time.
-I originally tried to avoid separate trait for <code>local_minus_utc</code>,
-but ultimately abandoned that plan
-to make <code>dt.offset().local_minus_utc()</code> possible.</p>
-<p>There are a set of <code>TimeZone</code>s and <code>Offset</code>s available:</p>
-<table>
-<thead>
-<tr>
-<th><code>TimeZone</code> instance</th>
-<th><code>Offset</code> instance</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>UTC</code></td>
-<td><code>UTC</code></td>
-</tr>
-<tr>
-<td><code>FixedOffset</code></td>
-<td><code>FixedOffset</code></td>
-</tr>
-<tr>
-<td><code>Local</code></td>
-<td><code>FixedOffset</code></td>
-</tr>
-<tr>
-<td><code>TzFile</code> (*)</td>
-<td><code>TzFileOffset</code> (*)</td>
-</tr>
-<tr>
-<td><code>TzRule</code> (*)</td>
-<td><code>TzRuleOffset</code> (*)</td>
-</tr>
-</tbody>
-</table>
-<p>(* Some instances are under the development.)</p>
-<p>One can note that some time zones are their own offsets,
-as they do not have an additional data (i.e. cache) for the storage,
-and <code>Local</code> reuses the <code>FixedOffset</code> as <code>Local</code> itself has no state.
-Other time zones have to cache its offset <em>and</em> the transition data,
-hence separate offset types.</p>
-<p><code>TzFile</code> and <code>TzRule</code> is a part of tzdata support;
-they will be typically used as a reference-counted version,
-such as <code>Rc&lt;TzFile&gt;</code> or <code>Arc&lt;TzRule&gt;</code>,
-to avoid the deep copying (which is common in Chrono).
-<code>TzRule</code> implements the rule string in POSIX <code>TZ</code> environment variable,
-which is not that useful by its own (since we can use <code>Local</code> anyway),
-but it's <code>TzFile</code>'s solution to the aforementioned problem 1:
-the future zone transition is encoded as a form of <code>TzRule</code>,
-and we need to implement it.</p>
-<p>At the end this new design is quite promising,
-but even after <code>#![feature(associated_types)]</code> is gone
-associated types are still cutting edge features.
-I had to disable debuginfo due to the Rust issue <a href="https://github.com/rust-lang/rust/issues/21010">#21010</a>, for example.
-Hopefully though, this shall not affect the validity of this design.</p>            </article>
+                <p>A day for smaller works. :)</p>
+<ul>
+<li>
+<p>I've updated the horribly outdated <a href="http://cosmic.mearie.org/2014/01/periodic-table-of-rust-types/">Periodic Table</a> of Rust Types.
+  The resulting table seems a lot clearer than the previous.
+  I've also received a series of suggestions and mistakes (oops) from /r/rust.</p>
+</li>
+<li>
+<p>I've pushed a <a href="https://github.com/lifthrasiir/rust-maybe_utf8">MaybeUTF8</a> library.
+  This was originally a part of <a href="https://github.com/lifthrasiir/rust-zip">rust-zip</a> library,
+  but this is slightly undermaintained than <a href="https://github.com/mvdnes/zip-rs">zip-rs</a>,
+  and I basically kept it just compilable in the recent nightly.
+  In the long term I plan to merge some design of rust-zip into zip-rs,
+  and as a preparation I've separated this into a separate crate.
+  <code>MaybeUTF8</code> was what newer nightlies liked to break, anyway.</p>
+</li>
+</ul>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="./worklog-2015-01-13.html" rel="bookmark" title="Permalink to Worklog 2015-01-13">Worklog 2015-01-13</a></li>
         
 
  

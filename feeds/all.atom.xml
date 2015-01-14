@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-14T02:19:00+09:00</updated><entry><title>Worklog 2015-01-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html" rel="alternate"></link><updated>2015-01-14T02:19:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-14:rustlog/worklog-2015-01-13.html</id><summary type="html">&lt;p&gt;I've finally got the initial design of &lt;a href="https://github.com/lifthrasiir/rust-chrono/tree/0.2/"&gt;Chrono 0.2&lt;/a&gt; working.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-15T02:17:00+09:00</updated><entry><title>Worklog 2015-01-14</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-14.html" rel="alternate"></link><updated>2015-01-15T02:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-15:rustlog/worklog-2015-01-14.html</id><summary type="html">&lt;p&gt;A day for smaller works. :)&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;I've updated the horribly outdated &lt;a href="http://cosmic.mearie.org/2014/01/periodic-table-of-rust-types/"&gt;Periodic Table&lt;/a&gt; of Rust Types.
+  The resulting table seems a lot clearer than the previous.
+  I've also received a series of suggestions and mistakes (oops) from /r/rust.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;I've pushed a &lt;a href="https://github.com/lifthrasiir/rust-maybe_utf8"&gt;MaybeUTF8&lt;/a&gt; library.
+  This was originally a part of &lt;a href="https://github.com/lifthrasiir/rust-zip"&gt;rust-zip&lt;/a&gt; library,
+  but this is slightly undermaintained than &lt;a href="https://github.com/mvdnes/zip-rs"&gt;zip-rs&lt;/a&gt;,
+  and I basically kept it just compilable in the recent nightly.
+  In the long term I plan to merge some design of rust-zip into zip-rs,
+  and as a preparation I've separated this into a separate crate.
+  &lt;code&gt;MaybeUTF8&lt;/code&gt; was what newer nightlies liked to break, anyway.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;</summary></entry><entry><title>Worklog 2015-01-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html" rel="alternate"></link><updated>2015-01-14T02:19:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-14:rustlog/worklog-2015-01-13.html</id><summary type="html">&lt;p&gt;I've finally got the initial design of &lt;a href="https://github.com/lifthrasiir/rust-chrono/tree/0.2/"&gt;Chrono 0.2&lt;/a&gt; working.
 It took so much time, partially because
 I'm working on dozens of other projects including Rust libraries.
 It solves one of the major annoyance with Chrono,
