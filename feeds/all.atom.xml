@@ -8,8 +8,8 @@ where people concentrate on getting things done
 no matter they are working on (libraries, Rust PRs and so on).&lt;/p&gt;
 &lt;p&gt;Today was the fourth meetup since 2014-12-20,
 and as an advertisement (haha)
-I'm going to translate a short summary of
-things that actually have been done to Rust soon.
+I'm going to post a short summary of
+things that actually have been done in that meetup soon.
 For &lt;em&gt;this&lt;/em&gt; worklog, I'm going to discuss my newest PR, &lt;a href="https://github.com/rust-lang/rust/pull/21304"&gt;#21304&lt;/a&gt;.&lt;/p&gt;
 &lt;h2&gt;Rustdoc Testing&lt;/h2&gt;
 &lt;p&gt;It is relatively well known that
