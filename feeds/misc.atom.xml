@@ -1,5 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-15T02:17:00+09:00</updated><entry><title>Worklog 2015-01-14</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-14.html" rel="alternate"></link><updated>2015-01-15T02:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-15:rustlog/worklog-2015-01-14.html</id><summary type="html">&lt;p&gt;A day for smaller works. :)&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-18T03:58:00+09:00</updated><entry><title>Worklog 2015-01-17</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-17.html" rel="alternate"></link><updated>2015-01-18T03:58:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-18:rustlog/worklog-2015-01-17.html</id><summary type="html">&lt;p&gt;In the case you don't know,
+there are a number of Korean people interested in and working with Rust.
+Consequently, the emergence of &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;
+should be evident.
+It organizes a soon-to-be-monthly series of loose meetups,
+where people concentrate on getting things done
+no matter they are working on (libraries, Rust PRs and so on).&lt;/p&gt;
+&lt;p&gt;Today was the fourth meetup since 2014-12-20,
+and as an advertisement (haha)
+I'm going to translate a short summary of
+things that actually have been done to Rust soon.
+For &lt;em&gt;this&lt;/em&gt; worklog, I'm going to discuss my newest PR, &lt;a href="https://github.com/rust-lang/rust/pull/21304"&gt;#21304&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Rustdoc Testing&lt;/h2&gt;
+&lt;p&gt;It is relatively well known that
+Rustdoc is one of the most under-tested component in the entire tree.
+That is partly because
+we are dealing with the HTML output
+(the write-only language&lt;sup&gt;TM&lt;/sup&gt; since circa 2004)
+which is often hard to test without manual intervention.
+Having fixed several Rustdoc issues in the past,
+I naturally wanted to get the regression test for Rustdoc
+but was surprised that there are only handful number of actual tests.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/rust-lang/rust/pull/21304"&gt;#21304&lt;/a&gt; is my attempt to resolve this issue.
+It adds a moderately-sized Python script
+for matching against given portion of the HTML file.
+Hopefully (note the caveats listed below),
+it will make writing Rustdoc tests easier
+since the code and verification data are integrated.
+For example, the &lt;code&gt;run-make/rustdoc-where&lt;/code&gt; test uses
+this verification script
+to check if the &lt;code&gt;where&lt;/code&gt; clause is present in the output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;grep &lt;span class="s2"&gt;&amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/struct.Alpha.html &amp;gt; /dev/null
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Alpha&amp;quot;&lt;/span&gt;
+grep &lt;span class="s2"&gt;&amp;quot;Bravo.*where.*B:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/trait.Bravo.html &amp;gt; /dev/null
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Bravo&amp;quot;&lt;/span&gt;
+grep &lt;span class="s2"&gt;&amp;quot;charlie.*where.*C:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/fn.charlie.html &amp;gt; /dev/null
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Charlie&amp;quot;&lt;/span&gt;
+grep &lt;span class="s2"&gt;&amp;quot;impl.*Delta.*where.*D:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/struct.Delta.html &amp;gt; /dev/null
+&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Delta&amp;quot;&lt;/span&gt;
+&lt;span class="c"&gt;# and so on&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This chunk of code is separate from
+the actual source code being compiled.
+With this PR, the following Rust code
+can also be used to verify its Rustdoc output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c1"&gt;// @matches foo/struct.Alpha.html &amp;#39;//pre&amp;#39; &amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;struct&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Alpha&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;MyTrait&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="c1"&gt;// @matches foo/trait.Bravo.html &amp;#39;//pre&amp;#39; &amp;quot;Bravo.*where.*B:.*MyTrait&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;trait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Bravo&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;B&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;B&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;MyTrait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="c1"&gt;// @matches foo/fn.charlie.html &amp;#39;//pre&amp;#39; &amp;quot;charlie.*where.*C:.*MyTrait&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;charlie&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;C&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;MyTrait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;struct&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Delta&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;D&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="c1"&gt;// @matches foo/struct.Delta.html &amp;#39;//*[@class=&amp;quot;impl&amp;quot;]//code&amp;#39; &amp;quot;impl.*Delta.*where.*D:.*MyTrait&amp;quot;&lt;/span&gt;
+&lt;span class="k"&gt;impl&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;D&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Delta&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;D&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;D&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;MyTrait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="c1"&gt;// and so on&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This actually constrains the portion of HTML to look at,
+so we can avoid some kinds of false positives.
+The cons is XPath, but that's the best we can achieve
+without introducing any non-standard Python dependencies.
+(Yes, Python has a built-in XPath implementation, slightly flawed.)
+Any suggestion in this area is welcomed.&lt;/p&gt;
+&lt;p&gt;I have some plans to do after this PR gets accepted.
+The first is, of course, turning Rustdoc tests into a new kind of tests.
+This will make writing Rustdoc tests more easier
+(add one file and done)
+so the Rustdoc fixes would get proper regression tests.
+I expect that we will need tons of &lt;code&gt;A-needstest&lt;/code&gt; after this change.&lt;/p&gt;
+&lt;p&gt;The second is a built-in link checker and other analyses.
+I already worked on &lt;a href="https://github.com/rust-lang/rust/issues/15309"&gt;#15309&lt;/a&gt;,
+and summarized the status of internal links in the generated docs,
+but frankly this should be done automatically.
+&lt;a href="https://www.reddit.com/r/rust/comments/2s0e9x/dead_links_in_documentation/"&gt;XMPPwocky has demonstrated the usefulness of link checker&lt;/a&gt;,
+but his checker uses &lt;code&gt;html5ever&lt;/code&gt;
+which is too large to integrate into the main tree.
+If we can get a reasonable performance with a link checker in Python,
+it would be great.
+(The link checker based on &lt;code&gt;html5ever&lt;/code&gt; might be useful for
+&lt;a href="https://github.com/rust-lang/rust/issues/20827"&gt;bigger testing infrastructure&lt;/a&gt;, though.)&lt;/p&gt;
+&lt;p&gt;Oh, and as aside I should really resume working on &lt;a href="https://github.com/rust-lang/rust/pull/19606"&gt;#19606&lt;/a&gt;...&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-14</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-14.html" rel="alternate"></link><updated>2015-01-15T02:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-15:rustlog/worklog-2015-01-14.html</id><summary type="html">&lt;p&gt;A day for smaller works. :)&lt;/p&gt;
 &lt;p&gt;I've updated the horribly outdated &lt;a href="http://cosmic.mearie.org/2014/01/periodic-table-of-rust-types/"&gt;Periodic Table&lt;/a&gt; of Rust Types.
 The resulting table seems a lot clearer than the previous.
 I've also received a series of suggestions and
