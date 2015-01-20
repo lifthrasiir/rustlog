@@ -1,5 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-18T03:58:00+09:00</updated><entry><title>Worklog 2015-01-17</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-17.html" rel="alternate"></link><updated>2015-01-18T03:58:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-18:rustlog/worklog-2015-01-17.html</id><summary type="html">&lt;p&gt;In the case you don't know,
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-20T11:17:00+09:00</updated><entry><title>Summary of Korean Rust Meetup #4</title><link href="https://lifthrasiir.github.io/rustlog/summary-of-korean-rust-meetup-4.html" rel="alternate"></link><updated>2015-01-20T11:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-20:rustlog/summary-of-korean-rust-meetup-4.html</id><summary type="html">&lt;p&gt;As I've &lt;a href="worklog-2015-01-17.html"&gt;promised&lt;/a&gt; before,
+this is a summary of the 4th Korean Rust Meetup
+hosted by &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;,
+where people concentrate on getting things done
+no matter they are working on (libraries, Rust PRs and so on).&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;&lt;a href="https://github.com/klutzy"&gt;@klutzy&lt;/a&gt; was repairing
+&lt;a href="https://github.com/klutzy/suruga"&gt;suruga&lt;/a&gt;'s experimental X.509 parser.
+There was some work on the certificate verification for a while,
+but recent macro reforms broke them a lot.
+Taking this as an opportunity to fully develop the parser,
+the development branch of suruga now got
+at least one kind of extensions working.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/kroisse"&gt;@kroisse&lt;/a&gt; worked on
+the &lt;a href="https://github.com/earthreader/rust-earth"&gt;Rust port&lt;/a&gt; of
+&lt;a href="http://libearth.earthreader.org/"&gt;libearth&lt;/a&gt;,
+a supporting library for the &lt;a href="http://earthreader.org/"&gt;Earth Reader&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I (&lt;a href="https://github.com/lifthrasiir"&gt;@lifthrasiir&lt;/a&gt;) added
+a &lt;a href="https://github.com/rust-lang/rust/pull/21304"&gt;new testing script for Rustdoc outputs&lt;/a&gt;.
+Actually I wasn't able to send a pull request in time
+(the PR was sent hours after the meetup),
+as I accidentally omitted &lt;code&gt;NO_REBUILD=1&lt;/code&gt; and wasted some hours. :S&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/sanxiyn"&gt;@sanxiyn&lt;/a&gt; got
+a &lt;a href="https://github.com/rust-lang/rust/pull/21323"&gt;basic infrastructure for code completion&lt;/a&gt;.
+At the moment it is able to produce
+a set of possible field names at given file position.
+This will tremendously help the development of IDEs for Rust.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/simnalamburt"&gt;@simnalamburt&lt;/a&gt; worked on
+&lt;a href="https://github.com/simnalamburt/obj-rs"&gt;obj-rs&lt;/a&gt;
+which parses Wavefront &lt;code&gt;.obj&lt;/code&gt; file.
+We already have &lt;a href="https://crates.io/search?q=obj"&gt;some existing parsers&lt;/a&gt;,
+but I've been told that
+other parsers cannot handle files produced by proprietary softwares,
+such as 3ds Max, so their uses are somewhat limited.
+It will help many professional game developers I guess.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;There were also some interested people who are simply willing to learn Rust.
+This is partly because the meetup was co-located with other meetups
+(such as &lt;a href="https://ko-kr.facebook.com/pyjog"&gt;PyJog&lt;/a&gt;).
+Having 1.0.0 alpha surely was good for them!
+I'm looking forward to the next meetup,
+which would likely be on the next month (February 2015).&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-17</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-17.html" rel="alternate"></link><updated>2015-01-18T03:58:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-18:rustlog/worklog-2015-01-17.html</id><summary type="html">&lt;p&gt;In the case you don't know,
 there are a number of Korean people interested in and working with Rust.
 Consequently, the emergence of &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;
 should be evident.

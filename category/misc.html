@@ -23,104 +23,60 @@
         
 
             <header>
-                <h1><a href="../worklog-2015-01-17.html" id="page-title">Worklog 2015-01-17</a></h1>
+                <h1><a href="../summary-of-korean-rust-meetup-4.html" id="page-title">Summary of Korean Rust Meetup #4</a></h1>
                 <span id="sitename"><a href=".." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2015-01-18T03:58:00+09:00">2015-01-18 03:58 +09:00</time>            </header>
+<time datetime="2015-01-20T11:17:00+09:00">2015-01-20 11:17 +09:00</time>            </header>
 
             <article>
-                <p>In the case you don't know,
-there are a number of Korean people interested in and working with Rust.
-Consequently, the emergence of <a href="http://rust-kr.org/">Korean Rust User Group</a>
-should be evident.
-It organizes a soon-to-be-monthly series of loose meetups,
+                <p>As I've <a href="worklog-2015-01-17.html">promised</a> before,
+this is a summary of the 4th Korean Rust Meetup
+hosted by <a href="http://rust-kr.org/">Korean Rust User Group</a>,
 where people concentrate on getting things done
 no matter they are working on (libraries, Rust PRs and so on).</p>
-<p>Today we had the fourth meetup (the previous one was on 2014-12-20),
-and as an advertisement (haha)
-I'm going to post a short summary of
-things that actually have been done in that meetup soon.
-For <em>this</em> worklog, I'm going to discuss my newest PR, <a href="https://github.com/rust-lang/rust/pull/21304">#21304</a>.</p>
-<h2>Rustdoc Testing</h2>
-<p>It is relatively well known that
-Rustdoc is one of the most under-tested components in the entire tree.
-That is partly because
-we are dealing with the HTML output
-(the write-only language<sup>TM</sup> since circa 2004)
-which is often hard to test without manual intervention.
-Having fixed several Rustdoc issues in the past,
-I naturally wanted to get the regression test for Rustdoc
-but was surprised that there are only handful number of actual tests.</p>
-<p><a href="https://github.com/rust-lang/rust/pull/21304">#21304</a> is my attempt to resolve this issue.
-It adds a moderately-sized Python script
-for matching against given portion of the HTML file.
-Hopefully (note the caveats listed below),
-it will make writing Rustdoc tests easier
-since the code and verification data are integrated.
-For example, the <code>run-make/rustdoc-where</code> test uses
-this verification script
-to check if the <code>where</code> clause is present in the output:</p>
-<div class="highlight"><pre>grep <span class="s2">&quot;Alpha.*where.*A:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/struct.Alpha.html &gt; /dev/null
-<span class="nb">echo</span> <span class="s2">&quot;Alpha&quot;</span>
-grep <span class="s2">&quot;Bravo.*where.*B:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/trait.Bravo.html &gt; /dev/null
-<span class="nb">echo</span> <span class="s2">&quot;Bravo&quot;</span>
-grep <span class="s2">&quot;charlie.*where.*C:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/fn.charlie.html &gt; /dev/null
-<span class="nb">echo</span> <span class="s2">&quot;Charlie&quot;</span>
-grep <span class="s2">&quot;impl.*Delta.*where.*D:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/struct.Delta.html &gt; /dev/null
-<span class="nb">echo</span> <span class="s2">&quot;Delta&quot;</span>
-<span class="c"># and so on</span>
-</pre></div>
-
-
-<p>This chunk of code is separate from
-the actual source code being compiled.
-With this PR, the following Rust code
-can also be used to verify its Rustdoc output:</p>
-<div class="highlight"><pre><span class="c1">// @matches foo/struct.Alpha.html &#39;//pre&#39; &quot;Alpha.*where.*A:.*MyTrait&quot;</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="n">Alpha</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="n">A</span><span class="o">:</span><span class="w"> </span><span class="n">MyTrait</span><span class="p">;</span><span class="w"></span>
-
-<span class="c1">// @matches foo/trait.Bravo.html &#39;//pre&#39; &quot;Bravo.*where.*B:.*MyTrait&quot;</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Bravo</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="n">B</span><span class="o">:</span><span class="w"> </span><span class="n">MyTrait</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
-
-<span class="c1">// @matches foo/fn.charlie.html &#39;//pre&#39; &quot;charlie.*where.*C:.*MyTrait&quot;</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">charlie</span><span class="o">&lt;</span><span class="n">C</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="n">C</span><span class="o">:</span><span class="w"> </span><span class="n">MyTrait</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
-
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="n">Delta</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="c1">// @matches foo/struct.Delta.html &#39;//*[@class=&quot;impl&quot;]//code&#39; &quot;impl.*Delta.*where.*D:.*MyTrait&quot;</span>
-<span class="k">impl</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Delta</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="n">D</span><span class="o">:</span><span class="w"> </span><span class="n">MyTrait</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="n">delta</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
-
-<span class="c1">// and so on</span>
-</pre></div>
-
-
-<p>This actually constrains the portion of HTML to look at,
-so we can avoid some kinds of false positives.
-The cons is XPath, but that's the best we can achieve
-without introducing any non-standard Python dependencies.
-(Yes, Python has a built-in XPath implementation, slightly flawed.)
-Any suggestion in this area is welcomed.</p>
-<p>I have some plans to do after this PR gets accepted.
-The first is, of course, turning Rustdoc tests into a new kind of tests.
-This will make writing Rustdoc tests more easier
-(add one file and done)
-so the Rustdoc fixes would get proper regression tests.
-I expect that we will need tons of <code>A-needstest</code> after this change.</p>
-<p>The second is a built-in link checker and other analyses.
-I already worked on <a href="https://github.com/rust-lang/rust/issues/15309">#15309</a>,
-and summarized the status of internal links in the generated docs,
-but frankly this should be done automatically.
-<a href="https://www.reddit.com/r/rust/comments/2s0e9x/dead_links_in_documentation/">XMPPwocky has demonstrated the usefulness of link checker</a>,
-but his checker uses <code>html5ever</code>
-which is too large to integrate into the main tree.
-If we can get a reasonable performance with a link checker in Python,
-it would be great.
-(The link checker based on <code>html5ever</code> might be useful for
-<a href="https://github.com/rust-lang/rust/issues/20827">bigger testing infrastructure</a>, though.)</p>
-<p>Oh, and as aside I should really resume working on <a href="https://github.com/rust-lang/rust/pull/19606">#19606</a>...</p>            </article>
+<hr />
+<p><a href="https://github.com/klutzy">@klutzy</a> was repairing
+<a href="https://github.com/klutzy/suruga">suruga</a>'s experimental X.509 parser.
+There was some work on the certificate verification for a while,
+but recent macro reforms broke them a lot.
+Taking this as an opportunity to fully develop the parser,
+the development branch of suruga now got
+at least one kind of extensions working.</p>
+<p><a href="https://github.com/kroisse">@kroisse</a> worked on
+the <a href="https://github.com/earthreader/rust-earth">Rust port</a> of
+<a href="http://libearth.earthreader.org/">libearth</a>,
+a supporting library for the <a href="http://earthreader.org/">Earth Reader</a>.</p>
+<p>I (<a href="https://github.com/lifthrasiir">@lifthrasiir</a>) added
+a <a href="https://github.com/rust-lang/rust/pull/21304">new testing script for Rustdoc outputs</a>.
+Actually I wasn't able to send a pull request in time
+(the PR was sent hours after the meetup),
+as I accidentally omitted <code>NO_REBUILD=1</code> and wasted some hours. :S</p>
+<p><a href="https://github.com/sanxiyn">@sanxiyn</a> got
+a <a href="https://github.com/rust-lang/rust/pull/21323">basic infrastructure for code completion</a>.
+At the moment it is able to produce
+a set of possible field names at given file position.
+This will tremendously help the development of IDEs for Rust.</p>
+<p><a href="https://github.com/simnalamburt">@simnalamburt</a> worked on
+<a href="https://github.com/simnalamburt/obj-rs">obj-rs</a>
+which parses Wavefront <code>.obj</code> file.
+We already have <a href="https://crates.io/search?q=obj">some existing parsers</a>,
+but I've been told that
+other parsers cannot handle files produced by proprietary softwares,
+such as 3ds Max, so their uses are somewhat limited.
+It will help many professional game developers I guess.</p>
+<hr />
+<p>There were also some interested people who are simply willing to learn Rust.
+This is partly because the meetup was co-located with other meetups
+(such as <a href="https://ko-kr.facebook.com/pyjog">PyJog</a>).
+Having 1.0.0 alpha surely was good for them!
+I'm looking forward to the next meetup,
+which would likely be on the next month (February 2015).</p>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="../worklog-2015-01-17.html" rel="bookmark" title="Permalink to Worklog 2015-01-17">Worklog 2015-01-17</a></li>
         
 
  
