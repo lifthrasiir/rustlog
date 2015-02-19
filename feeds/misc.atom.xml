@@ -1,5 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-01-20T11:17:00+09:00</updated><entry><title>Summary of Korean Rust Meetup #4</title><link href="https://lifthrasiir.github.io/rustlog/summary-of-korean-rust-meetup-4.html" rel="alternate"></link><updated>2015-01-20T11:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-20:rustlog/summary-of-korean-rust-meetup-4.html</id><summary type="html">&lt;p&gt;As I've &lt;a href="worklog-2015-01-17.html"&gt;promised&lt;/a&gt; before,
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-02-19T00:00:00+09:00</updated><entry><title>Worklog 2015-02-19</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-02-19.html" rel="alternate"></link><updated>2015-02-19T00:00:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-02-19:rustlog/worklog-2015-02-19.html</id><summary type="html">&lt;p&gt;Long time no see.
+My daily job and other various distractions
+prevented me from doing a continuous work like blogging.
+Well, I finally finished &lt;a href="https://github.com/lifthrasiir/rust-chrono/blob/0.2/CHANGELOG.md#020-2015-02-19"&gt;Chrono 0.2&lt;/a&gt; up
+so I have something to write down now.&lt;/p&gt;
+&lt;p&gt;In the &lt;a href="/worklog-2015-01-13.html"&gt;previous post&lt;/a&gt; about Chrono,
+I discussed about a new time zone and offset handling of Chrono 0.2.
+This alone is a big change,
+but another big change in Chrono 0.2 is
+a new formatting and parsing API.
+Chrono 0.1 already had a rudimentary formatting API via &lt;code&gt;format&lt;/code&gt; method,
+but it didn't have a parsing API
+which was another pain point besides from local date/time handling.&lt;/p&gt;
+&lt;p&gt;Chrono 0.2 has three different pieces of new APIs
+redesigned for formatting and parsing:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Formatting syntax representation ("items") and parsing&lt;/li&gt;
+&lt;li&gt;Formatting with items&lt;/li&gt;
+&lt;li&gt;Parsing with items&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Altogether they form an advanced formatting facility in Chrono 0.2.
+I'll try to briefly discuss their designs and justifications.&lt;/p&gt;
+&lt;h2&gt;Formatting Items&lt;/h2&gt;
+&lt;p&gt;In Chrono, a formatting item is a unit of formatting or parsing.
+For example a &lt;code&gt;strftime&lt;/code&gt;-like format string &lt;code&gt;%Y-%m-%d&lt;/code&gt; has
+five different formatting items:
+&lt;code&gt;%Y&lt;/code&gt;, &lt;code&gt;-&lt;/code&gt;, &lt;code&gt;%m&lt;/code&gt;, &lt;code&gt;-&lt;/code&gt; and &lt;code&gt;%d&lt;/code&gt;.
+Chrono decouples a formatting syntax from
+the actual meaning of formatting items,
+so they have the following (somewhat verbose) internal representations:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Day&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This decoupling allows Chrono
+to support multiple formatting syntax,
+such as &lt;code&gt;YYYY-MM-DD&lt;/code&gt; or &lt;a href="http://fuckinggodateformat.com/"&gt;Go-like &lt;code&gt;2006-01-02&lt;/code&gt;&lt;/a&gt; instead.
+Also, Chrono can have "hidden" formatting items
+that can be used for internal purposes.
+RFC 2822 and 3339 support is implemented in this way.&lt;/p&gt;
+&lt;p&gt;The formatting item is a good abstraction,
+but every abstraction comes with a complexity.
+In the case of Chrono
+the complexity arises from the desire to avoid allocation.
+The number of formatting items is
+proportional to the length of format string
+in the worst case,
+so we cannot blindly collect items into a collection.
+Instead, Chrono returns an &lt;code&gt;Iterator&lt;/code&gt; of formatting items
+and directly consumes that iterator
+for printing the date and time.
+Therefore the following identity holds:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;StrftimeItems&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;new&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;%Y-%m-%d&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;collect&lt;/span&gt;&lt;span class="o"&gt;::&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Vec&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;           &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Day&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;)]);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I believe this redesign has a maximal flexibility
+while retaining an ability to avoid &lt;code&gt;std&lt;/code&gt; at all.&lt;/p&gt;
+&lt;h2&gt;Formatting with Items&lt;/h2&gt;
+&lt;p&gt;Formatting with items is done with a new &lt;code&gt;format_with_items&lt;/code&gt; method.
+The original &lt;code&gt;format&lt;/code&gt; method is now a thin wrapper over that.&lt;/p&gt;
+&lt;p&gt;This part of Chrono remains relatively unchanged,
+but there are some notable small changes
+which deserve the explanation:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The original &lt;code&gt;format&lt;/code&gt; had a bug with leap seconds:
+  Instead of printing &lt;code&gt;23:59:60.234567890&lt;/code&gt;,
+  it would print &lt;code&gt;23:59:59.1234567890&lt;/code&gt;.
+  It originates from Chrono's unique handling of leap seconds,
+  and has been fixed in Chrono 0.2.&lt;/li&gt;
+&lt;li&gt;There are &lt;code&gt;Numeric::Nanosecond&lt;/code&gt; and &lt;code&gt;Fixed::Nanosecond&lt;/code&gt;.
+  The former corresponds to &lt;code&gt;strftime&lt;/code&gt;'s &lt;code&gt;%f&lt;/code&gt; specifier
+  and was present since Chrono 0.1.
+  The latter is a new formatting item
+  which may print nothing, &lt;code&gt;.###&lt;/code&gt;, &lt;code&gt;.######&lt;/code&gt; or &lt;code&gt;.#########&lt;/code&gt;
+  depending on the available accuracy.
+  (An empty string is for the whole number of seconds.)
+  This "adaptive" version turned out to be
+  much more useful for parsing.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Numeric::Timestamp&lt;/code&gt; (&lt;code&gt;%s&lt;/code&gt;) is now supported.
+  It was delayed due to the proper local date/time handling.&lt;/li&gt;
+&lt;li&gt;While this change is quite subtle,
+  &lt;code&gt;Numeric::Year&lt;/code&gt; (&lt;code&gt;%Y&lt;/code&gt;) and &lt;code&gt;Numeric::IsoYear&lt;/code&gt; (&lt;code&gt;%G&lt;/code&gt;)
+  now has an explicit sign for years not between 1 BCE and 9999 CE.
+  It is a necessity from bijective parsing,
+  which means that once printed,
+  any valid date and time can be parsed into the original value.
+  This particular scheme is adopted from ISO 8601:2004,
+  so this is not really Chrono's own invention.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Parsing with Items&lt;/h2&gt;
+&lt;p&gt;Okay, this is a fun part.
+Basically Chrono 0.2 has the following parsing algorithm:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;A fixed string parses as is:
+   It has to appear in the input string as is.&lt;/li&gt;
+&lt;li&gt;A sequence of one or more whitespace consumes
+   &lt;em&gt;zero&lt;/em&gt; or more whitespace.&lt;/li&gt;
+&lt;li&gt;Most numeric items (&lt;code&gt;Numeric::*&lt;/code&gt;) have
+   a predefined &lt;strong&gt;parsing width&lt;/strong&gt;,
+   the maximal number of digits that can be consumed.
+   They consume zero or more whitespace
+   followed by one or more but limited number of digits.
+   The exception is made to &lt;code&gt;Numeric::Year&lt;/code&gt; and &lt;code&gt;Numeric::IsoYear&lt;/code&gt;,
+   which may accept an arbitrary number of digits
+   when preceded by a sign.&lt;/li&gt;
+&lt;li&gt;Fixed items (&lt;code&gt;Fixed::*&lt;/code&gt;) have their own parsing logics,
+   but normally does not consume preceding whitespace.
+   They also normally ignore cases.&lt;/li&gt;
+&lt;li&gt;At the end of the formatting items,
+   the whole input string should have been consumed.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This is modelled after &lt;code&gt;strptime&lt;/code&gt;'s parsing algorithm,
+which seems to handle lots of corner cases.
+This allows a lax input like &lt;code&gt;2014-2-6&lt;/code&gt;
+for a format string &lt;code&gt;%Y-%m-%d&lt;/code&gt;.
+The fixed parsing width allows a format string like &lt;code&gt;%Y%m%d&lt;/code&gt;
+which would accept strings like &lt;code&gt;20140206&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Parsing is daunting work,
+implemented with two rather big modules (&lt;code&gt;chrono::format::{parse,scan}&lt;/code&gt;),
+but it's actually an easy part.
+Parsing only yields different date/time parts,
+which has to be merged into actual values via the &lt;strong&gt;resolution algorithm&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;As an easy example, consider RFC 2822.
+&lt;a href="https://tools.ietf.org/html/rfc2822#section-3.3"&gt;RFC 2822 date and time format&lt;/a&gt; has a day of week part,
+which should be consistent to other date parts when specified.
+But &lt;code&gt;strptime&lt;/code&gt;-based parse would happily accept inconsistent input:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Wed, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;struct_time&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tm_year&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2014&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mon&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;31&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                 &lt;span class="n"&gt;tm_hour&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_min&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_sec&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                 &lt;span class="n"&gt;tm_wday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_yday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_isdst&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Thu, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;struct_time&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tm_year&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2014&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mon&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;31&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                 &lt;span class="n"&gt;tm_hour&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_min&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_sec&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                 &lt;span class="n"&gt;tm_wday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_yday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_isdst&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Resolving date/time parts is littered with lots of corner cases,
+and that's why common date/time parsers do not correctly implement it;
+as far as I know,
+glibc, Python and JodaTime completely ignores the resolution.
+Therefore I'm glad to announce that
+&lt;strong&gt;Chrono 0.2 has a complete and known-to-be-correct resolution algorithm&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Chrono has a dedicated date/time part storage called &lt;code&gt;Parsed&lt;/code&gt;.
+The resolution algorithm is hard to describe as is,
+but the relevant &lt;a href="https://github.com/lifthrasiir/rust-chrono/blob/master/src/format/parsed.rs"&gt;source code&lt;/a&gt; is relatively well-commented
+and worth reading if you are interested in the algorithm.&lt;/p&gt;
+&lt;h2&gt;Chrono 0.3?&lt;/h2&gt;
+&lt;p&gt;Maybe this might be an early assumption,
+but Chrono 0.2 is intended to be a stable base of
+the future API evolution.
+The very main design decision was already in 0.1,
+but 0.2 completes and fixes the biggest problem with 0.1.&lt;/p&gt;
+&lt;p&gt;There are &lt;a href="https://github.com/lifthrasiir/rust-chrono/issues"&gt;some issues&lt;/a&gt; I've thought about 0.3.
+Some of them will be definitely implemented in 0.3 (e.g. tzfile support),
+some others are somewhat illusive (e.g. additional format syntax).
+But these issues do not replace the users' feedback.
+Personally I'd like to thank /u/savage884,
+who brought the problem of local date handling in the &lt;a href="https://www.reddit.com/r/rust/comments/2w825v/local_times_in_chrono/"&gt;/r/rust post&lt;/a&gt;.
+This post crucially helped me finishing the work and releasing 0.2.
+I wish others give a feedback for Chrono like that,
+so Chrono doesn't remain an library "considered annoying but designed so",
+which situation I really don't like.&lt;/p&gt;</summary></entry><entry><title>Summary of Korean Rust Meetup #4</title><link href="https://lifthrasiir.github.io/rustlog/summary-of-korean-rust-meetup-4.html" rel="alternate"></link><updated>2015-01-20T11:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-20:rustlog/summary-of-korean-rust-meetup-4.html</id><summary type="html">&lt;p&gt;As I've &lt;a href="worklog-2015-01-17.html"&gt;promised&lt;/a&gt; before,
 this is a summary of the 4th Korean Rust Meetup
 hosted by &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;,
 where people concentrate on getting things done

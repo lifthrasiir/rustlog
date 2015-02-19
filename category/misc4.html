@@ -23,56 +23,194 @@
         
 
             <header>
-                <h1><a href="../summary-of-korean-rust-meetup-4.html" id="page-title">Summary of Korean Rust Meetup #4</a></h1>
+                <h1><a href="../worklog-2015-02-19.html" id="page-title">Worklog 2015-02-19</a></h1>
                 <span id="sitename"><a href=".." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2015-01-20T11:17:00+09:00">2015-01-20 11:17 +09:00</time>            </header>
+<time datetime="2015-02-19T00:00:00+09:00">2015-02-19 00:00 +09:00</time>            </header>
 
             <article>
-                <p>As I've <a href="worklog-2015-01-17.html">promised</a> before,
-this is a summary of the 4th Korean Rust Meetup
-hosted by <a href="http://rust-kr.org/">Korean Rust User Group</a>,
-where people concentrate on getting things done
-no matter they are working on (libraries, Rust PRs and so on).</p>
-<hr />
-<p><a href="https://github.com/klutzy">@klutzy</a> was repairing
-<a href="https://github.com/klutzy/suruga">suruga</a>'s experimental X.509 parser.
-There was some work on the certificate verification for a while,
-but recent macro reforms broke them a lot.
-Taking this as an opportunity to fully develop the parser,
-the development branch of suruga now got
-at least one kind of extensions working.</p>
-<p><a href="https://github.com/kroisse">@kroisse</a> worked on
-the <a href="https://github.com/earthreader/rust-earth">Rust port</a> of
-<a href="http://libearth.earthreader.org/">libearth</a>,
-a supporting library for the <a href="http://earthreader.org/">Earth Reader</a>.</p>
-<p>I (<a href="https://github.com/lifthrasiir">@lifthrasiir</a>) added
-a <a href="https://github.com/rust-lang/rust/pull/21304">new testing script for Rustdoc outputs</a>.
-Actually I wasn't able to send a pull request in time
-(the PR was sent hours after the meetup),
-as I accidentally omitted <code>NO_REBUILD=1</code> and wasted some hours. :S</p>
-<p><a href="https://github.com/sanxiyn">@sanxiyn</a> got
-a <a href="https://github.com/rust-lang/rust/pull/21323">basic infrastructure for code completion</a>.
-At the moment it is able to produce
-a set of possible field names at given file position.
-This will tremendously help the development of IDEs for Rust.</p>
-<p><a href="https://github.com/simnalamburt">@simnalamburt</a> worked on
-<a href="https://github.com/simnalamburt/obj-rs">obj-rs</a>
-which parses Wavefront <code>.obj</code> file.
-We already have <a href="https://crates.io/search?q=obj">some existing parsers</a>,
-but I've been told that
-other parsers cannot handle files produced by proprietary softwares,
-such as 3ds Max, so their uses are somewhat limited.
-It will help many professional game developers I guess.</p>
-<hr />
-<p>There were also some interested people who are simply willing to learn Rust.
-This is partly because the meetup was co-located with other meetups
-(such as <a href="https://ko-kr.facebook.com/pyjog">PyJog</a>).
-Having 1.0.0 alpha surely was good for them!
-I'm looking forward to the next meetup,
-which would likely be on the next month (February 2015).</p>            </article>
+                <p>Long time no see.
+My daily job and other various distractions
+prevented me from doing a continuous work like blogging.
+Well, I finally finished <a href="https://github.com/lifthrasiir/rust-chrono/blob/0.2/CHANGELOG.md#020-2015-02-19">Chrono 0.2</a> up
+so I have something to write down now.</p>
+<p>In the <a href="/worklog-2015-01-13.html">previous post</a> about Chrono,
+I discussed about a new time zone and offset handling of Chrono 0.2.
+This alone is a big change,
+but another big change in Chrono 0.2 is
+a new formatting and parsing API.
+Chrono 0.1 already had a rudimentary formatting API via <code>format</code> method,
+but it didn't have a parsing API
+which was another pain point besides from local date/time handling.</p>
+<p>Chrono 0.2 has three different pieces of new APIs
+redesigned for formatting and parsing:</p>
+<ul>
+<li>Formatting syntax representation ("items") and parsing</li>
+<li>Formatting with items</li>
+<li>Parsing with items</li>
+</ul>
+<p>Altogether they form an advanced formatting facility in Chrono 0.2.
+I'll try to briefly discuss their designs and justifications.</p>
+<h2>Formatting Items</h2>
+<p>In Chrono, a formatting item is a unit of formatting or parsing.
+For example a <code>strftime</code>-like format string <code>%Y-%m-%d</code> has
+five different formatting items:
+<code>%Y</code>, <code>-</code>, <code>%m</code>, <code>-</code> and <code>%d</code>.
+Chrono decouples a formatting syntax from
+the actual meaning of formatting items,
+so they have the following (somewhat verbose) internal representations:</p>
+<div class="highlight"><pre><span class="p">[</span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
+<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
+<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
+<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
+<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Day</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">)]</span><span class="w"></span>
+</pre></div>
+
+
+<p>This decoupling allows Chrono
+to support multiple formatting syntax,
+such as <code>YYYY-MM-DD</code> or <a href="http://fuckinggodateformat.com/">Go-like <code>2006-01-02</code></a> instead.
+Also, Chrono can have "hidden" formatting items
+that can be used for internal purposes.
+RFC 2822 and 3339 support is implemented in this way.</p>
+<p>The formatting item is a good abstraction,
+but every abstraction comes with a complexity.
+In the case of Chrono
+the complexity arises from the desire to avoid allocation.
+The number of formatting items is
+proportional to the length of format string
+in the worst case,
+so we cannot blindly collect items into a collection.
+Instead, Chrono returns an <code>Iterator</code> of formatting items
+and directly consumes that iterator
+for printing the date and time.
+Therefore the following identity holds:</p>
+<div class="highlight"><pre><span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">StrftimeItems</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="s">&quot;%Y-%m-%d&quot;</span><span class="p">).</span><span class="n">collect</span><span class="o">::&lt;</span><span class="n">Vec</span><span class="o">&lt;</span><span class="n">_</span><span class="o">&gt;&gt;</span><span class="p">(),</span><span class="w"></span>
+<span class="w">           </span><span class="p">[</span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
+<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
+<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
+<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
+<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Day</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">)]);</span><span class="w"></span>
+</pre></div>
+
+
+<p>I believe this redesign has a maximal flexibility
+while retaining an ability to avoid <code>std</code> at all.</p>
+<h2>Formatting with Items</h2>
+<p>Formatting with items is done with a new <code>format_with_items</code> method.
+The original <code>format</code> method is now a thin wrapper over that.</p>
+<p>This part of Chrono remains relatively unchanged,
+but there are some notable small changes
+which deserve the explanation:</p>
+<ul>
+<li>The original <code>format</code> had a bug with leap seconds:
+  Instead of printing <code>23:59:60.234567890</code>,
+  it would print <code>23:59:59.1234567890</code>.
+  It originates from Chrono's unique handling of leap seconds,
+  and has been fixed in Chrono 0.2.</li>
+<li>There are <code>Numeric::Nanosecond</code> and <code>Fixed::Nanosecond</code>.
+  The former corresponds to <code>strftime</code>'s <code>%f</code> specifier
+  and was present since Chrono 0.1.
+  The latter is a new formatting item
+  which may print nothing, <code>.###</code>, <code>.######</code> or <code>.#########</code>
+  depending on the available accuracy.
+  (An empty string is for the whole number of seconds.)
+  This "adaptive" version turned out to be
+  much more useful for parsing.</li>
+<li><code>Numeric::Timestamp</code> (<code>%s</code>) is now supported.
+  It was delayed due to the proper local date/time handling.</li>
+<li>While this change is quite subtle,
+  <code>Numeric::Year</code> (<code>%Y</code>) and <code>Numeric::IsoYear</code> (<code>%G</code>)
+  now has an explicit sign for years not between 1 BCE and 9999 CE.
+  It is a necessity from bijective parsing,
+  which means that once printed,
+  any valid date and time can be parsed into the original value.
+  This particular scheme is adopted from ISO 8601:2004,
+  so this is not really Chrono's own invention.</li>
+</ul>
+<h2>Parsing with Items</h2>
+<p>Okay, this is a fun part.
+Basically Chrono 0.2 has the following parsing algorithm:</p>
+<ol>
+<li>A fixed string parses as is:
+   It has to appear in the input string as is.</li>
+<li>A sequence of one or more whitespace consumes
+   <em>zero</em> or more whitespace.</li>
+<li>Most numeric items (<code>Numeric::*</code>) have
+   a predefined <strong>parsing width</strong>,
+   the maximal number of digits that can be consumed.
+   They consume zero or more whitespace
+   followed by one or more but limited number of digits.
+   The exception is made to <code>Numeric::Year</code> and <code>Numeric::IsoYear</code>,
+   which may accept an arbitrary number of digits
+   when preceded by a sign.</li>
+<li>Fixed items (<code>Fixed::*</code>) have their own parsing logics,
+   but normally does not consume preceding whitespace.
+   They also normally ignore cases.</li>
+<li>At the end of the formatting items,
+   the whole input string should have been consumed.</li>
+</ol>
+<p>This is modelled after <code>strptime</code>'s parsing algorithm,
+which seems to handle lots of corner cases.
+This allows a lax input like <code>2014-2-6</code>
+for a format string <code>%Y-%m-%d</code>.
+The fixed parsing width allows a format string like <code>%Y%m%d</code>
+which would accept strings like <code>20140206</code>.</p>
+<p>Parsing is daunting work,
+implemented with two rather big modules (<code>chrono::format::{parse,scan}</code>),
+but it's actually an easy part.
+Parsing only yields different date/time parts,
+which has to be merged into actual values via the <strong>resolution algorithm</strong>.</p>
+<p>As an easy example, consider RFC 2822.
+<a href="https://tools.ietf.org/html/rfc2822#section-3.3">RFC 2822 date and time format</a> has a day of week part,
+which should be consistent to other date parts when specified.
+But <code>strptime</code>-based parse would happily accept inconsistent input:</p>
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">time</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s">&#39;Wed, 31 Dec 2014 04:26:40 +0000&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S +0000&#39;</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">struct_time</span><span class="p">(</span><span class="n">tm_year</span><span class="o">=</span><span class="mi">2014</span><span class="p">,</span> <span class="n">tm_mon</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">tm_mday</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
+                 <span class="n">tm_hour</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">tm_min</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">tm_sec</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                 <span class="n">tm_wday</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">tm_yday</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span> <span class="n">tm_isdst</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s">&#39;Thu, 31 Dec 2014 04:26:40 +0000&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S +0000&#39;</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">struct_time</span><span class="p">(</span><span class="n">tm_year</span><span class="o">=</span><span class="mi">2014</span><span class="p">,</span> <span class="n">tm_mon</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">tm_mday</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
+                 <span class="n">tm_hour</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">tm_min</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">tm_sec</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                 <span class="n">tm_wday</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">tm_yday</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span> <span class="n">tm_isdst</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Resolving date/time parts is littered with lots of corner cases,
+and that's why common date/time parsers do not correctly implement it;
+as far as I know,
+glibc, Python and JodaTime completely ignores the resolution.
+Therefore I'm glad to announce that
+<strong>Chrono 0.2 has a complete and known-to-be-correct resolution algorithm</strong>.</p>
+<p>Chrono has a dedicated date/time part storage called <code>Parsed</code>.
+The resolution algorithm is hard to describe as is,
+but the relevant <a href="https://github.com/lifthrasiir/rust-chrono/blob/master/src/format/parsed.rs">source code</a> is relatively well-commented
+and worth reading if you are interested in the algorithm.</p>
+<h2>Chrono 0.3?</h2>
+<p>Maybe this might be an early assumption,
+but Chrono 0.2 is intended to be a stable base of
+the future API evolution.
+The very main design decision was already in 0.1,
+but 0.2 completes and fixes the biggest problem with 0.1.</p>
+<p>There are <a href="https://github.com/lifthrasiir/rust-chrono/issues">some issues</a> I've thought about 0.3.
+Some of them will be definitely implemented in 0.3 (e.g. tzfile support),
+some others are somewhat illusive (e.g. additional format syntax).
+But these issues do not replace the users' feedback.
+Personally I'd like to thank /u/savage884,
+who brought the problem of local date handling in the <a href="https://www.reddit.com/r/rust/comments/2w825v/local_times_in_chrono/">/r/rust post</a>.
+This post crucially helped me finishing the work and releasing 0.2.
+I wish others give a feedback for Chrono like that,
+so Chrono doesn't remain an library "considered annoying but designed so",
+which situation I really don't like.</p>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="../summary-of-korean-rust-meetup-4.html" rel="bookmark" title="Permalink to Summary of Korean Rust Meetup #4">Summary of Korean Rust Meetup #4</a></li>
         
 
  
