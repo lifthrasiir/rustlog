@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-02-19T00:00:00+09:00</updated><entry><title>Worklog 2015-02-19</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-02-19.html" rel="alternate"></link><updated>2015-02-19T00:00:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-02-19:rustlog/worklog-2015-02-19.html</id><summary type="html">&lt;p&gt;Long time no see.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/misc.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-02-19T23:12:00+09:00</updated><entry><title>Worklog 2015-02-19</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-02-19.html" rel="alternate"></link><updated>2015-02-19T23:12:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-02-19:rustlog/worklog-2015-02-19.html</id><summary type="html">&lt;p&gt;Long time no see.
 My daily job and other various distractions
 prevented me from doing a continuous work like blogging.
 Well, I finally finished &lt;a href="https://github.com/lifthrasiir/rust-chrono/blob/0.2/CHANGELOG.md#020-2015-02-19"&gt;Chrono 0.2&lt;/a&gt; up
 so I have something to write down now.&lt;/p&gt;
-&lt;p&gt;In the &lt;a href="/worklog-2015-01-13.html"&gt;previous post&lt;/a&gt; about Chrono,
+&lt;p&gt;In the &lt;a href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html"&gt;previous post&lt;/a&gt; about Chrono,
 I discussed about a new time zone and offset handling of Chrono 0.2.
 This alone is a big change,
 but another big change in Chrono 0.2 is
