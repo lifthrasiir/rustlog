@@ -188,11 +188,11 @@ Its use of LZ77 is also suboptimal,
 as the matching window is limited in 64 KB and
 anything beyond that won't be deduplicated.
 The existing suggestion was to use <a href="http://tukaani.org/xz/">xz</a> for tarballs (<a href="https://github.com/rust-lang/rust/issues/21724">#21724</a>)
-and Snappy or LZ4 for metadata (<a href="https://github.com/rust-lang/rust/issues/6902">#6902</a>)
+and Snappy or LZ4 for metadata (<a href="https://github.com/rust-lang/rust/issues/6902">#6902</a>).
 They should use different algorithms as
 metadata should decompress quickly.</p>
 <h2>Achievements</h2>
-<p>So what had I do? Warning: Bragging follows.</p>
+<p>So what have I done? Warning: Bragging follows.</p>
 <p>The first PR, <a href="https://github.com/rust-lang/rust/pull/22971">#22971</a>, changes the metadata encoding
 to greatly reduce the inherent overhead of EBML.
 (In fact, it is now completely different from EBML!)
