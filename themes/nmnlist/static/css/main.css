@@ -78,6 +78,10 @@ p {
   text-indent: 0px;
 }
 
+li>p, dd>p {
+  margin: 10px auto;
+}
+
 /* line 65, ../../compass/src/main.scss */
 p.caption {
   font-size: 80%;
