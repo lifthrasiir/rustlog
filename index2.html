@@ -23,190 +23,217 @@
         
 
             <header>
-                <h1><a href="./worklog-2015-02-19.html" id="page-title">Worklog 2015-02-19</a></h1>
+                <h1><a href="./worklog-2015-03-06.html" id="page-title">Worklog 2015-03-06</a></h1>
                 <span id="sitename"><a href="." id="site-title">Rustlog </a> &sdot;</span>
-<time datetime="2015-02-19T23:12:00+09:00">2015-02-19 23:12 +09:00</time>            </header>
+<time datetime="2015-03-06T03:23:00+09:00">2015-03-06 03:23 +09:00</time>            </header>
 
             <article>
-                <p>Long time no see.
-My daily job and other various distractions
-prevented me from doing a continuous work like blogging.
-Well, I finally finished <a href="https://github.com/lifthrasiir/rust-chrono/blob/0.2/CHANGELOG.md#020-2015-02-19">Chrono 0.2</a> up
-so I have something to write down now.</p>
-<p>In the <a href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html">previous post</a> about Chrono,
-I discussed about a new time zone and offset handling of Chrono 0.2.
-This alone is a big change,
-but another big change in Chrono 0.2 is
-a new formatting and parsing API.
-Chrono 0.1 already had a rudimentary formatting API via <code>format</code> method,
-but it didn't have a parsing API
-which was another pain point besides from local date/time handling.</p>
-<p>Chrono 0.2 has three different pieces of new APIs
-redesigned for formatting and parsing:</p>
+                <p>I have recently pushed three pull requests into Rust:
+<a href="https://github.com/rust-lang/rust/pull/22839">#22839</a>, <a href="https://github.com/rust-lang/rust/pull/22971">#22971</a> and <a href="https://github.com/rust-lang/rust/pull/23060">#23060</a>.
+Each has its own significance,
+but today I'll discuss about last two PRs
+primarily because they strictly remove lots of redundant data
+from the Rust distribution.</p>
+<h2>Anatomy of Rust Distribution</h2>
+<p>Let's look at <a href="http://static.rust-lang.org/dist/2015-03-03/rust-nightly-x86_64-unknown-linux-gnu.tar.gz">2015-03-03 nightly</a>,
+which is the last nightly not affected by two PRs.
+It is 144.8 MB after gzipped
+(Note: this is 144.8 times 10<sup>6</sup> bytes, to be exact),
+and 634.5 MB before compression.
+More precisely:</p>
 <ul>
-<li>Formatting syntax representation ("items") and parsing</li>
-<li>Formatting with items</li>
-<li>Parsing with items</li>
-</ul>
-<p>Altogether they form an advanced formatting facility in Chrono 0.2.
-I'll try to briefly discuss their designs and justifications.</p>
-<h2>Formatting Items</h2>
-<p>In Chrono, a formatting item is a unit of formatting or parsing.
-For example a <code>strftime</code>-like format string <code>%Y-%m-%d</code> has
-five different formatting items:
-<code>%Y</code>, <code>-</code>, <code>%m</code>, <code>-</code> and <code>%d</code>.
-Chrono decouples a formatting syntax from
-the actual meaning of formatting items,
-so they have the following (somewhat verbose) internal representations:</p>
-<div class="highlight"><pre><span class="p">[</span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
-<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
-<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
-<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
-<span class="w"> </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Day</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">)]</span><span class="w"></span>
-</pre></div>
-
-
-<p>This decoupling allows Chrono
-to support multiple formatting syntax,
-such as <code>YYYY-MM-DD</code> or <a href="http://fuckinggodateformat.com/">Go-like <code>2006-01-02</code></a> instead.
-Also, Chrono can have "hidden" formatting items
-that can be used for internal purposes.
-RFC 2822 and 3339 support is implemented in this way.</p>
-<p>The formatting item is a good abstraction,
-but every abstraction comes with a complexity.
-In the case of Chrono
-the complexity arises from the desire to avoid allocation.
-The number of formatting items is
-proportional to the length of format string
-in the worst case,
-so we cannot blindly collect items into a collection.
-Instead, Chrono returns an <code>Iterator</code> of formatting items
-and directly consumes that iterator
-for printing the date and time.
-Therefore the following identity holds:</p>
-<div class="highlight"><pre><span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">StrftimeItems</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="s">&quot;%Y-%m-%d&quot;</span><span class="p">).</span><span class="n">collect</span><span class="o">::&lt;</span><span class="n">Vec</span><span class="o">&lt;</span><span class="n">_</span><span class="o">&gt;&gt;</span><span class="p">(),</span><span class="w"></span>
-<span class="w">           </span><span class="p">[</span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
-<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
-<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">),</span><span class="w"></span>
-<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Literal</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">),</span><span class="w"></span>
-<span class="w">            </span><span class="n">Item</span><span class="o">::</span><span class="n">Numeric</span><span class="p">(</span><span class="n">Numeric</span><span class="o">::</span><span class="n">Day</span><span class="p">,</span><span class="w"> </span><span class="n">Pad</span><span class="o">::</span><span class="n">Zero</span><span class="p">)]);</span><span class="w"></span>
-</pre></div>
-
-
-<p>I believe this redesign has a maximal flexibility
-while retaining an ability to avoid <code>std</code> at all.</p>
-<h2>Formatting with Items</h2>
-<p>Formatting with items is done with a new <code>format_with_items</code> method.
-The original <code>format</code> method is now a thin wrapper over that.</p>
-<p>This part of Chrono remains relatively unchanged,
-but there are some notable small changes
-which deserve the explanation:</p>
+<li>
+<p><code>rustc</code> directory contains a main Rust distribution, and
+  is 296.3 MB and 101.8 MB before and after compression.</p>
 <ul>
-<li>The original <code>format</code> had a bug with leap seconds:
-  Instead of printing <code>23:59:60.234567890</code>,
-  it would print <code>23:59:59.1234567890</code>.
-  It originates from Chrono's unique handling of leap seconds,
-  and has been fixed in Chrono 0.2.</li>
-<li>There are <code>Numeric::Nanosecond</code> and <code>Fixed::Nanosecond</code>.
-  The former corresponds to <code>strftime</code>'s <code>%f</code> specifier
-  and was present since Chrono 0.1.
-  The latter is a new formatting item
-  which may print nothing, <code>.###</code>, <code>.######</code> or <code>.#########</code>
-  depending on the available accuracy.
-  (An empty string is for the whole number of seconds.)
-  This "adaptive" version turned out to be
-  much more useful for parsing.</li>
-<li><code>Numeric::Timestamp</code> (<code>%s</code>) is now supported.
-  It was delayed due to the proper local date/time handling.</li>
-<li>While this change is quite subtle,
-  <code>Numeric::Year</code> (<code>%Y</code>) and <code>Numeric::IsoYear</code> (<code>%G</code>)
-  now has an explicit sign for years not between 1 BCE and 9999 CE.
-  It is a necessity from bijective parsing,
-  which means that once printed,
-  any valid date and time can be parsed into the original value.
-  This particular scheme is adopted from ISO 8601:2004,
-  so this is not really Chrono's own invention.</li>
+<li>
+<p>Non-library files have negligible size (less than a megabyte).</p>
+</li>
+<li>
+<p>We ship at most <em>three</em> copies of files per crate:
+Shared libraries from snapshot compiler,
+shared libraries for the compiled Rust executable,
+and optionally static counterparts of them.</p>
+<p>We can omit static libraries from the distribution.
+This completely removes the ability to statically link,
+but this would remove 48.1 MB and 11.3 MB of binary
+before and after compression.</p>
+</li>
+<li>
+<p><a href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-06.html">As previously mentioned</a>, metadata takes much space.
+Some of them are compressed with gzip and
+actually does not compress well in the tarball.
+Some of them, prominently in static libraries, are not compressed
+so that they can be conveniently <code>mmap</code>ped.</p>
+<p>Static libraries have 93.4 MB of uncompressed metadata.
+Shared libraries have 32.7 MB of compressed metadata.
+Assuming that they have same compression ratio as the overall directory
+(and that already compressed metadata do not compress at all),
+they will take about 65 MB in the gzipped tarball.</p>
+</li>
 </ul>
-<h2>Parsing with Items</h2>
-<p>Okay, this is a fun part.
-Basically Chrono 0.2 has the following parsing algorithm:</p>
+</li>
+<li>
+<p><code>rust-docs</code> directory contains generated HTML documentation
+  (which includes compiler crates, as in <code>make compiler-docs</code>) and
+  is 313.3 MB and 40.0 MB before and after compression.</p>
+<ul>
+<li>
+<p>There are particularly large crates:
+<code>rustc</code>, <code>rustc_trans</code>, <code>std</code>, <code>rustc_typeck</code> and <code>rustc_lint</code> crates
+take 218.6 MB and 30.6 MB before and after compression.</p>
+</li>
+<li>
+<p>If we actually try to remove compiler crates,
+that will remove at least 204.6 MB and 29.4 MB before and compression.
+Why "at least"? That will also remove files from other directories,
+but that's cumbersome to quantify.</p>
+</li>
+<li>
+<p>The HTML documentation also essentially reproduces
+a public portion of each crate's source code,
+which takes 23.8 MB and 5.4 MB before and after compression.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>cargo</code> directory contains (of course) Cargo, and
+  is 8.9 MB and 3.4 MB before and after compression.</p>
+</li>
+</ul>
+<h2>Ways to Enlightenment (or sorta)</h2>
+<p>There are several ways to shrink the tarball.</p>
+<p>First, we observe that the docs are technically
+same contents as the shipped libraries.
+That would mean, if possible,
+generating docs from the compiled library on the fly
+will completely remove docs from the distribution!
+<a href="https://github.com/rust-lang/rust/pull/19606">#19606</a> was my initial attempt to do that,
+but it had several obstacles I wasn't able to tackle on time.</p>
+<p>There are some alternative solutions with docs:</p>
 <ol>
-<li>A fixed string parses as is:
-   It has to appear in the input string as is.</li>
-<li>A sequence of one or more whitespace consumes
-   <em>zero</em> or more whitespace.</li>
-<li>Most numeric items (<code>Numeric::*</code>) have
-   a predefined <strong>parsing width</strong>,
-   the maximal number of digits that can be consumed.
-   They consume zero or more whitespace
-   followed by one or more but limited number of digits.
-   The exception is made to <code>Numeric::Year</code> and <code>Numeric::IsoYear</code>,
-   which may accept an arbitrary number of digits
-   when preceded by a sign.</li>
-<li>Fixed items (<code>Fixed::*</code>) have their own parsing logics,
-   but normally does not consume preceding whitespace.
-   They also normally ignore cases.</li>
-<li>At the end of the formatting items,
-   the whole input string should have been consumed.</li>
+<li>
+<p>Move everything to JavaScript with an optimized format.
+   The "HTML" documentation will actually be
+   a huge web application that renders the page.</p>
+</li>
+<li>
+<p>As a variation of 1, make it a Rust web server.
+   If we don't care about bundling <a href="https://github.com/hyperium/hyper">Hyper</a> with Rust, why not.</p>
+</li>
+<li>
+<p>Remove compiler docs and keep others as is.
+   This might be a good trade-off as
+   many end users won't bother looking at them.</p>
+</li>
+<li>
+<p>Remove source codes from the docs. (<a href="https://github.com/rust-lang/rust/issues/23061">#23601</a>)
+   We already have a separate tarball for source codes,
+   so let users download them if they really want.
+   Of course, this alone won't make much effect.</p>
+</li>
 </ol>
-<p>This is modelled after <code>strptime</code>'s parsing algorithm,
-which seems to handle lots of corner cases.
-This allows a lax input like <code>2014-2-6</code>
-for a format string <code>%Y-%m-%d</code>.
-The fixed parsing width allows a format string like <code>%Y%m%d</code>
-which would accept strings like <code>20140206</code>.</p>
-<p>Parsing is daunting work,
-implemented with two rather big modules (<code>chrono::format::{parse,scan}</code>),
-but it's actually an easy part.
-Parsing only yields different date/time parts,
-which has to be merged into actual values via the <strong>resolution algorithm</strong>.</p>
-<p>As an easy example, consider RFC 2822.
-<a href="https://tools.ietf.org/html/rfc2822#section-3.3">RFC 2822 date and time format</a> has a day of week part,
-which should be consistent to other date parts when specified.
-But <code>strptime</code>-based parse would happily accept inconsistent input:</p>
-<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">time</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s">&#39;Wed, 31 Dec 2014 04:26:40 +0000&#39;</span><span class="p">,</span>
-                  <span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S +0000&#39;</span><span class="p">)</span>
-<span class="n">time</span><span class="o">.</span><span class="n">struct_time</span><span class="p">(</span><span class="n">tm_year</span><span class="o">=</span><span class="mi">2014</span><span class="p">,</span> <span class="n">tm_mon</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">tm_mday</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
-                 <span class="n">tm_hour</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">tm_min</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">tm_sec</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-                 <span class="n">tm_wday</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">tm_yday</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span> <span class="n">tm_isdst</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s">&#39;Thu, 31 Dec 2014 04:26:40 +0000&#39;</span><span class="p">,</span>
-                  <span class="s">&#39;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S +0000&#39;</span><span class="p">)</span>
-<span class="n">time</span><span class="o">.</span><span class="n">struct_time</span><span class="p">(</span><span class="n">tm_year</span><span class="o">=</span><span class="mi">2014</span><span class="p">,</span> <span class="n">tm_mon</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">tm_mday</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
-                 <span class="n">tm_hour</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">tm_min</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span> <span class="n">tm_sec</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-                 <span class="n">tm_wday</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">tm_yday</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span> <span class="n">tm_isdst</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</pre></div>
-
-
-<p>Resolving date/time parts is littered with lots of corner cases,
-and that's why common date/time parsers do not correctly implement it;
-as far as I know,
-glibc, Python and JodaTime completely ignores the resolution.
-Therefore I'm glad to announce that
-<strong>Chrono 0.2 has a complete and known-to-be-correct resolution algorithm</strong>.</p>
-<p>Chrono has a dedicated date/time part storage called <code>Parsed</code>.
-The resolution algorithm is hard to describe as is,
-but the relevant <a href="https://github.com/lifthrasiir/rust-chrono/blob/master/src/format/parsed.rs">source code</a> is relatively well-commented
-and worth reading if you are interested in the algorithm.</p>
-<h2>Chrono 0.3?</h2>
-<p>Maybe this might be an early assumption,
-but Chrono 0.2 is intended to be a stable base of
-the future API evolution.
-The very main design decision was already in 0.1,
-but 0.2 completes and fixes the biggest problem with 0.1.</p>
-<p>There are <a href="https://github.com/lifthrasiir/rust-chrono/issues">some issues</a> I've thought about 0.3.
-Some of them will be definitely implemented in 0.3 (e.g. tzfile support),
-some others are somewhat illusive (e.g. additional format syntax).
-But these issues do not replace the users' feedback.
-Personally I'd like to thank /u/savage884,
-who brought the problem of local date handling in the <a href="https://www.reddit.com/r/rust/comments/2w825v/local_times_in_chrono/">/r/rust post</a>.
-This post crucially helped me finishing the work and releasing 0.2.
-I wish others give a feedback for Chrono like that,
-so Chrono doesn't remain an library "considered annoying but designed so",
-which situation I really don't like.</p>            </article>
+<p>Second, we can shrink the metadata.
+The metadata was based on the <a href="http://ebml.sourceforge.net/specs/">EBML</a>
+but we had very, very different use cases compared to Matroska:</p>
+<ul>
+<li>
+<p>We don't have lots of tags.
+  EBML tags are quite general (and tuned) because
+  each tag essentially is a unique identifier
+  and there can be lots of them in one file.
+  Rust metadata is different:
+  we have about one hundred or so specialized tags and
+  some dozens for auto-serialized AST.</p>
+</li>
+<li>
+<p>We don't have a proper schema.
+  As mentioned above, auto-serialized AST is
+  almost incomprehensible without the exact knowledge of data structure.
+  Still, somehow, we can navigate through that.
+  There are primarily two classes of serialization formats,
+  schematic (like protobuf) and schemaless (like JSON),
+  and <em>our use case is neither of them</em>.</p>
+</li>
+<li>
+<p>We don't perform relaxation.
+  That is, we don't encode the length optimally.
+  This is also a big limitation of EBML:
+  it does not have an indefinitely-sized container.
+  Moreover, we occasionally refer to other portion of encoded metadata
+  by a simple byte offset.
+  This makes the proper relaxation quite hard.</p>
+</li>
+<li>
+<p>EBML itself does not define an encoding for primitive values
+  (not uncommon with schematic serialization formats),
+  and our ad-hoc encoding for them is very inefficient.
+  For example, we have used 4 bytes for values
+  that occurs some hundred thousand times and is less than 100.</p>
+</li>
+</ul>
+<p>The main direction on metadata would be
+either ditching EBML or incrementally improving that.
+This was a subject of <a href="https://github.com/rust-lang/rust/issues/2743">2.5 year old bug</a>,
+and I always had an eye on that.</p>
+<p>Third, we can have only one copy of metadata per crate.
+This calls for two main prerequisites:
+rustc should be stable enough that
+we can combine rustc libraries and user code libraries, and
+rustc should have a knowledge of external metadata,
+which would look similar to Windows <a href="https://en.wikipedia.org/wiki/Program_database">PDB file</a>.
+That'd be a huge undertaking though.</p>
+<p>Lastly, we can simply switch to something better than gzip.
+Gzip is very old algorithm: it relies on
+four-score-old modelling algorithm---<a href="https://en.wikipedia.org/wiki/LZ77_and_LZ78">LZ77</a>---and
+suboptimal coding algorithm---skewed <a href="https://en.wikipedia.org/wiki/Huffman_coding">Huffman tree</a>.
+Its use of LZ77 is also suboptimal,
+as the matching window is limited in 64 KB and
+anything beyond that won't be deduplicated.
+The existing suggestion was to use <a href="http://tukaani.org/xz/">xz</a> for tarballs (<a href="https://github.com/rust-lang/rust/issues/21724">#21724</a>)
+and Snappy or LZ4 for metadata (<a href="https://github.com/rust-lang/rust/issues/6902">#6902</a>)
+They should use different algorithms as
+metadata should decompress quickly.</p>
+<h2>Achievements</h2>
+<p>So what had I do? Warning: Bragging follows.</p>
+<p>The first PR, <a href="https://github.com/rust-lang/rust/pull/22971">#22971</a>, changes the metadata encoding
+to greatly reduce the inherent overhead of EBML.
+(In fact, it is now completely different from EBML!)
+I kept somewhat debatable nature of navigable serialization format,
+which needs schema for complete decoding
+but is enough self-structured that can be inspected without much effort.
+@eddyb told me that he really wants to get rid of that nature,
+and I guess the future PRs would address that.</p>
+<p>The second PR, <a href="https://github.com/rust-lang/rust/pull/23060">#23060</a>, is very cost-effective one.
+We all know that compiler crates are large,
+but it becomes suspicious when
+docs for librustc are four times larger than those for libstd
+while libstd actually has more code than librustc (!).
+This ultimately traced to the quadratic growth of sidebars:
+When the module contains N items,
+there would be N sidebars with N items each.
+librustc had a large LLVM binding module, which caused a huge bloat.
+The solution was to move them into a shared JavaScript file per module.</p>
+<p>Was that effective? I think so.
+In fact, if my measurement is correct,
+the updated tarball should be <strong>35 MB</strong> smaller than the original,
+and the uncompressed size should be halved.
+Note that at the time of writing,
+the first PR has been already deployed
+and that resulted in universal 10 MB decrease in size.
+I too was surprised at the numbers,
+as my initial goal was just to reduce some 30% of metadata.
+Actually I was able to reduce 30% of <em>entire</em> tarball. Great.</p>
+<p>There are still many possible improvements on the distribution size.
+I welcome any suggestion, concrete proposal or implementation;
+I hope this post to motivate anyone interested in this task.</p>            </article>
                 <section id="article-list">
                     <h2>List of articles</h2>
                     <ol>
+        
+
+ 
+            <li><a href="./worklog-2015-02-19.html" rel="bookmark" title="Permalink to Worklog 2015-02-19">Worklog 2015-02-19</a></li>
         
 
  
