@@ -154,7 +154,8 @@ but we had very, very different use cases compared to Matroska:</p>
 </li>
 <li>
 <p>We don't perform relaxation.
-  That is, we don't encode the length optimally.
+  That is, we don't encode the length optimally,
+  as we generally don't know the length of the following data in advance.
   This is also a big limitation of EBML:
   it does not have an indefinitely-sized container.
   Moreover, we occasionally refer to other portion of encoded metadata
@@ -166,7 +167,7 @@ but we had very, very different use cases compared to Matroska:</p>
   (not uncommon with schematic serialization formats),
   and our ad-hoc encoding for them is very inefficient.
   For example, we have used 4 bytes for values
-  that occurs some hundred thousand times and is less than 100.</p>
+  that occur some hundred thousand times and is less than 100.</p>
 </li>
 </ul>
 <p>The main direction on metadata would be
@@ -182,8 +183,8 @@ which would look similar to Windows <a href="https://en.wikipedia.org/wiki/Progr
 That'd be a huge undertaking though.</p>
 <p>Lastly, we can simply switch to something better than gzip.
 Gzip is very old algorithm: it relies on
-four-score-old modelling algorithm---<a href="https://en.wikipedia.org/wiki/LZ77_and_LZ78">LZ77</a>---and
-suboptimal coding algorithm---skewed <a href="https://en.wikipedia.org/wiki/Huffman_coding">Huffman tree</a>.
+two-score-old modelling algorithm—<a href="https://en.wikipedia.org/wiki/LZ77_and_LZ78">LZ77</a>—and
+suboptimal coding algorithm—skewed <a href="https://en.wikipedia.org/wiki/Huffman_coding">Huffman tree</a>.
 Its use of LZ77 is also suboptimal,
 as the matching window is limited in 64 KB and
 anything beyond that won't be deduplicated.

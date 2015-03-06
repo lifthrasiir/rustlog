@@ -128,7 +128,8 @@ but we had very, very different use cases compared to Matroska:&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;We don't perform relaxation.
-  That is, we don't encode the length optimally.
+  That is, we don't encode the length optimally,
+  as we generally don't know the length of the following data in advance.
   This is also a big limitation of EBML:
   it does not have an indefinitely-sized container.
   Moreover, we occasionally refer to other portion of encoded metadata
@@ -140,7 +141,7 @@ but we had very, very different use cases compared to Matroska:&lt;/p&gt;
   (not uncommon with schematic serialization formats),
   and our ad-hoc encoding for them is very inefficient.
   For example, we have used 4 bytes for values
-  that occurs some hundred thousand times and is less than 100.&lt;/p&gt;
+  that occur some hundred thousand times and is less than 100.&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;The main direction on metadata would be
@@ -156,8 +157,8 @@ which would look similar to Windows &lt;a href="https://en.wikipedia.org/wiki/Pr
 That'd be a huge undertaking though.&lt;/p&gt;
 &lt;p&gt;Lastly, we can simply switch to something better than gzip.
 Gzip is very old algorithm: it relies on
-four-score-old modelling algorithm---&lt;a href="https://en.wikipedia.org/wiki/LZ77_and_LZ78"&gt;LZ77&lt;/a&gt;---and
-suboptimal coding algorithm---skewed &lt;a href="https://en.wikipedia.org/wiki/Huffman_coding"&gt;Huffman tree&lt;/a&gt;.
+two-score-old modelling algorithm—&lt;a href="https://en.wikipedia.org/wiki/LZ77_and_LZ78"&gt;LZ77&lt;/a&gt;—and
+suboptimal coding algorithm—skewed &lt;a href="https://en.wikipedia.org/wiki/Huffman_coding"&gt;Huffman tree&lt;/a&gt;.
 Its use of LZ77 is also suboptimal,
 as the matching window is limited in 64 KB and
 anything beyond that won't be deduplicated.
