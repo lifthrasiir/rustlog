@@ -28,7 +28,10 @@
 <time datetime="2016-06-02T23:58:00+09:00">2016-06-02 23:58 +09:00</time>            </header>
 
             <article>
-                <p>Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called <a href="https://rust-lang.org/">Rust</a>. Looking at some webpages and the <a href="https://user.rust-lang.org/">official forum</a>, it looks great and you decides to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to <a href="https://rustup.rs/">rustup</a> the problem seems gone by now. Cargo seems to be great, so you follow the <a href="https://doc.rust-lang.org/book/">first sections of the Book</a> and put a small greeting to the new language:</p>
+                <blockquote>
+<p>Do you want tl;dr? <a href="#takeaway">Go to the end of post.</a></p>
+</blockquote>
+<p>Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called <a href="https://rust-lang.org/">Rust</a>. Looking at some webpages and the <a href="https://user.rust-lang.org/">official forum</a>, it looks great and you decides to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to <a href="https://rustup.rs/">rustup</a> the problem seems gone by now. Cargo seems to be great, so you follow the <a href="https://doc.rust-lang.org/book/">first sections of the Book</a> and put a small greeting to the new language:</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Hello, world!&quot;</span><span class="p">);</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
@@ -84,8 +87,11 @@
 <blockquote>
 <p>Have you enabled the release build?</p>
 </blockquote>
-<p>It turns out that Cargo distinguishes the debug build (default) from the release build (<code>--release</code>). The <a href="http://doc.crates.io/manifest.html#the-profile-sections">Cargo documentation</a> explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build. So let’s try that!</p>
-<div class="highlight"><pre><span></span><span class="gp">$</span> ls -al target/release/hello
+<p>It turns out that Cargo distinguishes the debug build (default) from the release build (<code>--release</code>). The <a href="http://doc.crates.io/manifest.html#the-profile-sections">Cargo documentation</a> explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build.</p>
+<p>Note that Jorge Aparicio has correctly <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3t9yuj">pointed out</a> that the release build does not produce the smallest binary possible. That’s because the release build defaults to the optimization level 3 (<code>-C opt-level=3</code>), which may sacrifice the size for performance. The size-optimizing level (<code>-C opt-level=s</code> or <code>-C opt-level=z</code>) has recently <a href="https://github.com/rust-lang/rust/pull/32386">landed</a> however, so you may instead use them later. For now, however, we will stick to the default.</p>
+<p>Let’s try the release build!</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> cargo build --release
+<span class="gp">$</span> ls -al target/release/hello
 <span class="go">-rwxrwxr-x 1 lifthrasiir 646467 May 31 20:10 target/release/hello*</span>
 </pre></div>
 
@@ -390,11 +396,12 @@
 <p>Hey, I’ve learned the hard way that we have tons of variations over the “Hello, world!” programs, none of those programs print the proper and longest version of greeting!</p>
 </li>
 </ul>
-<p>This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:</p>
+<p><a name="takeaway"></a> This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:</p>
 <ul>
 <li>Compile with <code>--release</code>.</li>
 <li>Before the distribution, enable LTO and strip the binary.</li>
 <li>If your program is not memory-intensive, use the system allocator (assuming nightly).</li>
+<li>You may be able to use the optimization level <code>s</code>/<code>z</code> in the future as well.</li>
 <li>I didn’t mention this because it doesn’t improve such a small program, but you can also try <a href="http://upx.sourceforge.net/">UPX</a> and other executable compressors if you are working with much larger application.</li>
 </ul>
 <p>That’s all, folks!</p>            </article>
