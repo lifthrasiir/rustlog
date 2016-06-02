@@ -243,7 +243,7 @@
 </pre></div>
 
 
-<p>(Note all the options required to be in line with Rust equivalents. <code>-Wl,--gc-sections</code> is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5">Alexis Beingessner and Corey Richardson</a> for pointing out it was missing. Rust has that implied by default, and it can be independently applied from LTO, so the fair comparison also needs that.)</p>
+<p>(Note all the options required to be in line with Rust equivalents. <code>-Wl,--gc-sections</code> is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5">Alexis Beingessner and Corey Richardson</a> for pointing out it was missing. Rust has that implied by default, and it can be applied independently from LTO, so a fair comparison also needs that.)</p>
 <p>Also the Rust binary needs to be rebuilt:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo rustc --release -- -C link-args<span class="o">=</span>-static
 <span class="gp">$</span> strip target/release/hello
@@ -293,7 +293,7 @@
 </pre></div>
 
 
-<p>Okay, so this is finally the fair comparison. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.</p>
+<p>Okay, so this finally looks fair. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.</p>
 <p>There is yet another approach for the fairness. What if we can use dynamic linkage for Rust? This completely ruins the distribution until every OS ships with Rust standard library, but well, worth trying. Note that LTO, custom allocator and different panic strategy is not compatible to dynamic linkage, so you have to revert them first.</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo rustc --release -- -C prefer-dynamic
 <span class="gp">$</span> ls -al target/release/hello
