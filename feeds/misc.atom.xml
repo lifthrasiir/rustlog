@@ -205,18 +205,19 @@
 
 &lt;p&gt;&lt;strong&gt;And that’s it!&lt;/strong&gt; It is about the end of story if you don’t want to change the code.&lt;/p&gt;
 &lt;h2&gt;Intermission: Linkage&lt;/h2&gt;
-&lt;p&gt;Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The &lt;em&gt;fair&lt;/em&gt; comparison would be as follows:&lt;/p&gt;
+&lt;p&gt;Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The &lt;em&gt;fair&lt;/em&gt; (well, fair&lt;em&gt;er&lt;/em&gt;) comparison would be as follows:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; touch *.c *.cpp
-&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c &lt;span class="nv"&gt;CFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static -s&amp;#39;&lt;/span&gt;
-&lt;span class="go"&gt;cc -Os -flto -static    hello-c.c   -o hello-c&lt;/span&gt;
-&lt;span class="gp"&gt;$&lt;/span&gt; make hello-cpp &lt;span class="nv"&gt;CXXFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static -static-libstdc++ -s&amp;#39;&lt;/span&gt;
-&lt;span class="go"&gt;g++ -Os -flto -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c &lt;span class="nv"&gt;CFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -Wl,--gc-sections -static -s&amp;#39;&lt;/span&gt;
+&lt;span class="go"&gt;cc -Os -flto -Wl,--gc-sections -static    hello-c.c   -o hello-c&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-cpp &lt;span class="nv"&gt;CXXFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -Wl,--gc-sections -static -static-libstdc++ -s&amp;#39;&lt;/span&gt;
+&lt;span class="go"&gt;g++ -Os -flto -Wl,--gc-sections -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp&lt;/span&gt;
 &lt;span class="gp"&gt;$&lt;/span&gt; ls -al hello-c hello-cpp
-&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir  795904 May 31 20:50 hello-c*&lt;/span&gt;
-&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 1365720 May 31 20:50 hello-cpp*&lt;/span&gt;
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir  758704 May 31 20:50 hello-c*&lt;/span&gt;
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 1127784 May 31 20:50 hello-cpp*&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
+&lt;p&gt;(Note all the options required to be in line with Rust equivalents. &lt;code&gt;-Wl,--gc-sections&lt;/code&gt; is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to &lt;a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5"&gt;Alexis Beingessner and Corey Richardson&lt;/a&gt; for pointing out it was missing. Rust has that implied by default, and it can be independently applied from LTO, so the fair comparison also needs that.)&lt;/p&gt;
 &lt;p&gt;Also the Rust binary needs to be rebuilt:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cargo rustc --release -- -C link-args&lt;span class="o"&gt;=&lt;/span&gt;-static
 &lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello

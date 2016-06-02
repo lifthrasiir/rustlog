@@ -234,18 +234,19 @@
 
 <p><strong>And that’s it!</strong> It is about the end of story if you don’t want to change the code.</p>
 <h2>Intermission: Linkage</h2>
-<p>Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The <em>fair</em> comparison would be as follows:</p>
+<p>Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The <em>fair</em> (well, fair<em>er</em>) comparison would be as follows:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> touch *.c *.cpp
-<span class="gp">$</span> make hello-c <span class="nv">CFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -static -s&#39;</span>
-<span class="go">cc -Os -flto -static    hello-c.c   -o hello-c</span>
-<span class="gp">$</span> make hello-cpp <span class="nv">CXXFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -static -static-libstdc++ -s&#39;</span>
-<span class="go">g++ -Os -flto -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp</span>
+<span class="gp">$</span> make hello-c <span class="nv">CFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -Wl,--gc-sections -static -s&#39;</span>
+<span class="go">cc -Os -flto -Wl,--gc-sections -static    hello-c.c   -o hello-c</span>
+<span class="gp">$</span> make hello-cpp <span class="nv">CXXFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -Wl,--gc-sections -static -static-libstdc++ -s&#39;</span>
+<span class="go">g++ -Os -flto -Wl,--gc-sections -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp</span>
 <span class="gp">$</span> ls -al hello-c hello-cpp
-<span class="go">-rwxrwxr-x 1 lifthrasiir  795904 May 31 20:50 hello-c*</span>
-<span class="go">-rwxrwxr-x 1 lifthrasiir 1365720 May 31 20:50 hello-cpp*</span>
+<span class="go">-rwxrwxr-x 1 lifthrasiir  758704 May 31 20:50 hello-c*</span>
+<span class="go">-rwxrwxr-x 1 lifthrasiir 1127784 May 31 20:50 hello-cpp*</span>
 </pre></div>
 
 
+<p>(Note all the options required to be in line with Rust equivalents. <code>-Wl,--gc-sections</code> is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5">Alexis Beingessner and Corey Richardson</a> for pointing out it was missing. Rust has that implied by default, and it can be independently applied from LTO, so the fair comparison also needs that.)</p>
 <p>Also the Rust binary needs to be rebuilt:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo rustc --release -- -C link-args<span class="o">=</span>-static
 <span class="gp">$</span> strip target/release/hello
