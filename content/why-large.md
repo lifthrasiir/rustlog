@@ -1,7 +1,9 @@
 Title: Why is a Rust executable large?
 Date: 2016-06-02 23:58
 
-Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called [Rust](https://rust-lang.org/). Looking at some webpages and the [official forum](https://user.rust-lang.org/), it looks great and you decides to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to [rustup](https://rustup.rs/) the problem seems gone by now. Cargo seems to be great, so you follow the [first sections of the Book](https://doc.rust-lang.org/book/) and put a small greeting to the new language:
+> Do you want tl;dr? [Go to the end of post.](#takeaway)
+
+Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called [Rust](https://rust-lang.org/). Looking at some webpages and the [official forum](https://user.rust-lang.org/), it looks great and you decide to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to [rustup](https://rustup.rs/) the problem seems gone by now. Cargo seems to be great, so you follow the [first sections of the Book](https://doc.rust-lang.org/book/) and put a small greeting to the new language:
 
 ```rust
 fn main() {
@@ -63,9 +65,14 @@ If one were asked about the above, virtually every experienced Rust user would a
 
 > Have you enabled the release build?
 
-It turns out that Cargo distinguishes the debug build (default) from the release build (`--release`). The [Cargo documentation](http://doc.crates.io/manifest.html#the-profile-sections) explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build. So let’s try that!
+It turns out that Cargo distinguishes the debug build (default) from the release build (`--release`). The [Cargo documentation](http://doc.crates.io/manifest.html#the-profile-sections) explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build.
+
+Note that Jorge Aparicio has correctly [pointed out](https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3t9yuj) that the release build does not produce the smallest binary possible. That’s because the release build defaults to the optimization level 3 (`-C opt-level=3`), which may sacrifice the size for performance. The size-optimizing level (`-C opt-level=s` or `-C opt-level=z`) has recently [landed](https://github.com/rust-lang/rust/pull/32386), so you may instead use them later. For now, however, we will stick to the default.
+
+Let’s try the release build!
 
 ```console
+$ cargo build --release
 $ ls -al target/release/hello
 -rwxrwxr-x 1 lifthrasiir 646467 May 31 20:10 target/release/hello*
 ```
@@ -413,11 +420,12 @@ We can go much further even from this point, our executable still contains seemi
 
 * Hey, I’ve learned the hard way that we have tons of variations over the “Hello, world!” programs, none of those programs print the proper and longest version of greeting!
 
-This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:
+<a name="takeaway"></a> This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:
 
 * Compile with `--release`.
 * Before the distribution, enable LTO and strip the binary.
 * If your program is not memory-intensive, use the system allocator (assuming nightly).
+* You may be able to use the optimization level `s`/`z` in the future as well.
 * I didn’t mention this because it doesn’t improve such a small program, but you can also try [UPX](http://upx.sourceforge.net/) and other executable compressors if you are working with much larger application.
 
 That’s all, folks!
