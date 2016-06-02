@@ -62,7 +62,7 @@ This decision is partly because
 we would only have a handful number of <code>Offset</code> implementations,
 so we have to implement them anyway.
 In the end, we had something like this:</p>
-<div class="highlight"><pre><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">local_minus_utc</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Duration</span><span class="p">;</span><span class="w"></span>
 
 <span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">from_local_date</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">local</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="n">NaiveDate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">LocalResult</span><span class="o">&lt;</span><span class="n">Date</span><span class="o">&lt;</span><span class="n">Self</span><span class="o">&gt;&gt;</span><span class="p">;</span><span class="w"></span>
@@ -132,7 +132,7 @@ but I was not sure how to do that.</p>
 a game changer for this problem.
 They allow for two types to be smoothly connected in the compile time.
 The resulting design is as follows:</p>
-<div class="highlight"><pre><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Sized</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fmt</span><span class="o">::</span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Offset</span><span class="o">:</span><span class="w"> </span><span class="nb">Sized</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">Clone</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fmt</span><span class="o">::</span><span class="n">Show</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="n">local_minus_utc</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Duration</span><span class="p">;</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 
@@ -224,7 +224,7 @@ Hopefully though, this shall not affect the validity of this design.</p>
 </article>
 
         <footer>
-                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It primarily is a daily worklog of whatever he has done with Rust every day. See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
+                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It used to be a daily worklog of whatever he has done with Rust every day but he got bored and it is now more like a yearly log (sorry!). See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
                 <p id="theme-credit">Proudly powered by <a href="http://docs.notmyidea.org/alexis/pelican/">pelican</a></p>
         </footer>
 

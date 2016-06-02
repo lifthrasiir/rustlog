@@ -56,7 +56,7 @@ since the code and verification data are integrated.
 For example, the <code>run-make/rustdoc-where</code> test uses
 this verification script
 to check if the <code>where</code> clause is present in the output:</p>
-<div class="highlight"><pre>grep <span class="s2">&quot;Alpha.*where.*A:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/struct.Alpha.html &gt; /dev/null
+<div class="highlight"><pre><span></span>grep <span class="s2">&quot;Alpha.*where.*A:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/struct.Alpha.html &gt; /dev/null
 <span class="nb">echo</span> <span class="s2">&quot;Alpha&quot;</span>
 grep <span class="s2">&quot;Bravo.*where.*B:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/trait.Bravo.html &gt; /dev/null
 <span class="nb">echo</span> <span class="s2">&quot;Bravo&quot;</span>
@@ -64,7 +64,7 @@ grep <span class="s2">&quot;charlie.*where.*C:.*MyTrait&quot;</span> <span class
 <span class="nb">echo</span> <span class="s2">&quot;Charlie&quot;</span>
 grep <span class="s2">&quot;impl.*Delta.*where.*D:.*MyTrait&quot;</span> <span class="nv">$DOC</span>/struct.Delta.html &gt; /dev/null
 <span class="nb">echo</span> <span class="s2">&quot;Delta&quot;</span>
-<span class="c"># and so on</span>
+<span class="c1"># and so on</span>
 </pre></div>
 
 
@@ -72,7 +72,7 @@ grep <span class="s2">&quot;impl.*Delta.*where.*D:.*MyTrait&quot;</span> <span c
 the actual source code being compiled.
 With this PR, the following Rust code
 can also be used to verify its Rustdoc output:</p>
-<div class="highlight"><pre><span class="c1">// @matches foo/struct.Alpha.html &#39;//pre&#39; &quot;Alpha.*where.*A:.*MyTrait&quot;</span>
+<div class="highlight"><pre><span></span><span class="c1">// @matches foo/struct.Alpha.html &#39;//pre&#39; &quot;Alpha.*where.*A:.*MyTrait&quot;</span>
 <span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="n">Alpha</span><span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span><span class="w"> </span><span class="n">where</span><span class="w"> </span><span class="n">A</span><span class="o">:</span><span class="w"> </span><span class="n">MyTrait</span><span class="p">;</span><span class="w"></span>
 
 <span class="c1">// @matches foo/trait.Bravo.html &#39;//pre&#39; &quot;Bravo.*where.*B:.*MyTrait&quot;</span>
@@ -118,7 +118,7 @@ it would be great.
 </article>
 
         <footer>
-                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It primarily is a daily worklog of whatever he has done with Rust every day. See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
+                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It used to be a daily worklog of whatever he has done with Rust every day but he got bored and it is now more like a yearly log (sorry!). See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
                 <p id="theme-credit">Proudly powered by <a href="http://docs.notmyidea.org/alexis/pelican/">pelican</a></p>
         </footer>
 

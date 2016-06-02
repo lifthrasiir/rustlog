@@ -1,5 +1,374 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2015-03-06T03:23:00+09:00</updated><entry><title>Worklog 2015-03-06</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-03-06.html" rel="alternate"></link><updated>2015-03-06T03:23:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-03-06:rustlog/worklog-2015-03-06.html</id><summary type="html">&lt;p&gt;I have recently pushed three pull requests into Rust:
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rustlog</title><link href="https://lifthrasiir.github.io/rustlog/" rel="alternate"></link><link href="https://lifthrasiir.github.io/rustlog/feeds/all.atom.xml" rel="self"></link><id>https://lifthrasiir.github.io/rustlog/</id><updated>2016-06-02T23:58:00+09:00</updated><entry><title>Why is a Rust executable large?</title><link href="https://lifthrasiir.github.io/rustlog/why-is-a-rust-executable-large.html" rel="alternate"></link><published>2016-06-02T23:58:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2016-06-02:rustlog/why-is-a-rust-executable-large.html</id><summary type="html">&lt;p&gt;Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called &lt;a href="https://rust-lang.org/"&gt;Rust&lt;/a&gt;. Looking at some webpages and the &lt;a href="https://user.rust-lang.org/"&gt;official forum&lt;/a&gt;, it looks great and you decides to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to &lt;a href="https://rustup.rs/"&gt;rustup&lt;/a&gt; the problem seems gone by now. Cargo seems to be great, so you follow the &lt;a href="https://doc.rust-lang.org/book/"&gt;first sections of the Book&lt;/a&gt; and put a small greeting to the new language:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;println&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Hello, world!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Amazingly &lt;code&gt;cargo run&lt;/code&gt; runs without a hassle. It is kind of a miracle as you used to configure the build script, Makefile, projects or whatever before building things. Impressed, you realize that the executable is available in &lt;code&gt;target/debug/hello&lt;/code&gt;. You instinctively type &lt;code&gt;ls -al&lt;/code&gt; out (or is it &lt;code&gt;dir&lt;/code&gt;?) and you cannot believe your eyes:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/debug/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 650711 May 31 20:00 target/debug/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;650 &lt;em&gt;kilobytes&lt;/em&gt; to print anything?! You remember that Rust is probably a sole language that may possibly displace C++, and C++ is noted of the code bloat; would that mean Rust failed to fix one of C++’s big problems? Out of curiosity, you make the same program in C and compile it. The result is eye-opening:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cat hello-c.c
+&lt;span class="gp"&gt;#&lt;/span&gt;include &amp;lt;stdio.h&amp;gt;
+&lt;span class="go"&gt;int main() {&lt;/span&gt;
+&lt;span class="go"&gt;    printf(&amp;quot;Hello, World!\n&amp;quot;);&lt;/span&gt;
+&lt;span class="go"&gt;}&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al hello-c
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 8551 May 31 20:03 hello-c*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;Maybe C has a benefit of having bare-metal libraries&lt;/em&gt;, you think. This time you try a C++ program using &lt;code&gt;iostream&lt;/code&gt;, which should be much safer than C’s naive &lt;code&gt;printf&lt;/code&gt;. But surprisingly it still seems tiny compared to Rust:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cat hello-cpp.cpp
+&lt;span class="gp"&gt;#&lt;/span&gt;include &amp;lt;iostream&amp;gt;
+&lt;span class="go"&gt;using namespace std;&lt;/span&gt;
+&lt;span class="go"&gt;int main() {&lt;/span&gt;
+&lt;span class="go"&gt;    cout &amp;lt;&amp;lt; &amp;quot;Hello, World!&amp;quot; &amp;lt;&amp;lt; endl;&lt;/span&gt;
+&lt;span class="go"&gt;}&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-cpp
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al hello-cpp
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 9168 May 31 20:06 hello-cpp*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;What is wrong with Rust?&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;It seems that the surprisingly large size of Rust binary is a massive concern for many. This question is by no means new; there is a well-known, albeit year-old, &lt;a href="https://stackoverflow.com/questions/29008127/why-are-rust-executables-so-huge"&gt;question&lt;/a&gt; on StackOverflow, and searching for &lt;a href="https://duckduckgo.com/?q=why+is+rust+binary+large"&gt;“why is rust binary large”&lt;/a&gt; gives several more. Given the frequency of such questions, it is a bit surprising that we don’t yet have a definitive article or page dealing with them. So this is my attempt to provide one.&lt;/p&gt;
+&lt;p&gt;Just to be cautious: Is it a valid question to ask after all? We have hundreds of gigabytes of storage, if not some terabytes, and people should be using decent ISPs nowadays, so the binary size should not be a concern, right? The answer is that it still may matter (though not as much as before):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="https://www.akamai.com/us/en/our-thinking/state-of-the-internet-report/state-of-the-internet-connectivity-visualization.jsp"&gt;Akamai State of the Internet&lt;/a&gt; shows that, while more than 80% of users enjoy 4Mbps or more in developed countries much less users do in developing countries. The average connection has been improved much (almost every country is now past 1Mbps average), but the entire distribution is still stagnating. I was fortunate that I’m in the country where gigabit ethernet only costs $30/mo (!), but many others may not.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Ordinary consumers have only shallow understanding of computing, and they likely to relate any problem with anything they know of: one of the common sentiments is that the executable bloat causes slowdown. That’s unfortunate but true, and you would want to avoid that sentiment.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For wondering readers: All examples are tested in Rust 1.9.0 and 1.11.0-nightly (&lt;code&gt;a967611d8&lt;/code&gt; 2016-05-30). Unless noted, the primary operating system used is Linux 3.13.0 on x86-64. Your mileage may vary.&lt;/p&gt;
+&lt;h2&gt;Optimization Level&lt;/h2&gt;
+&lt;p&gt;If one were asked about the above, virtually every experienced Rust user would ask you back:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Have you enabled the release build?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It turns out that Cargo distinguishes the debug build (default) from the release build (&lt;code&gt;--release&lt;/code&gt;). The &lt;a href="http://doc.crates.io/manifest.html#the-profile-sections"&gt;Cargo documentation&lt;/a&gt; explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build. So let’s try that!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 646467 May 31 20:10 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And that didn’t really make a difference! This is because the optimization is only run over the user code, and we don’t have much user code. Almost all of the binary is from the standard library, and that doesn’t seem to be what we can do anything...&lt;/p&gt;
+&lt;h2&gt;Link-time Optimization (LTO)&lt;/h2&gt;
+&lt;p&gt;…except that we can. Enter the world of link-time optimization.&lt;/p&gt;
+&lt;p&gt;So the story is as follows: We can individually optimize each crate, and in fact all standard libraries ship in the optimized form. Once the compiler produces an optimized binary, it gets assembled to a single executable by a program called the “linker”. But we don’t need the entirety of standard library: a simple “Hello, world” program definitely does not need &lt;a href="https://doc.rust-lang.org/std/net/"&gt;&lt;code&gt;std::net&lt;/code&gt;&lt;/a&gt; for example. Yet, the linker is so stupid that it won’t try to remove unused parts of crates; it will just paste them.&lt;/p&gt;
+&lt;p&gt;There is actually a good reason that the traditional linker behaves so. The linker is commonly used in C and C++ languages among others, and each file is compiled individually. This is a sharp difference from Rust where the entire crate is compiled altogether. Unless required functions are scattered throughout files, the linker can fairly easily get rid of unused files at once. It’s not perfect, but reasonably approximate what we want—removing unused functions. One disadvantage is that the compiler is unable to optimize function calls pointing to other files; it simply lacks a required information.&lt;/p&gt;
+&lt;p&gt;C and C++ folks had been fine with that approximation for decades, but in the recent decade they had enough and started to provide an option to enable the &lt;em&gt;link-time optimization&lt;/em&gt; (LTO). In this scheme the compiler produces optimized binaries without looking at others, and the linker actively looks at them and tries to optimize binaries. It is much harder than working with (internally simplified) sources, and it blows the compilation time up, but it is worth trying if the smaller and/or faster executable is needed.&lt;/p&gt;
+&lt;p&gt;So far we have talked about C and C++, but the LTO is much more beneficial for Rust. &lt;code&gt;Cargo.toml&lt;/code&gt; has an option to enable LTO:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;[profile.release]&lt;/span&gt;
+&lt;span class="na"&gt;lto&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Did that work? Well, sort of:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 615725 May 31 20:17 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It had a larger effect than the optimization level, but not much. Maybe it is time to look at the executable itself.&lt;/p&gt;
+&lt;h2&gt;So what’s in my executable?&lt;/h2&gt;
+&lt;p&gt;There are several tools directly working with the executable, but probably the most useful one is &lt;a href="https://www.gnu.org/software/binutils/"&gt;GNU binutils&lt;/a&gt;. It is available to every Unix-like systems, and also in the Windows (&lt;a href="https://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/"&gt;MinGW&lt;/a&gt; has a standalone install for example).&lt;/p&gt;
+&lt;p&gt;There are many utilities in binutils, but &lt;code&gt;strings&lt;/code&gt; is probably the simplest. It simply crawls the binary to find a sequence of printable characters terminated by a zero byte, a typical representation of C string. Thus it tries to extract readable strings out of the binary, quite helpful for us. So let’s try that, and prepare for the scroll:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; strings target/release/hello &lt;span class="p"&gt;|&lt;/span&gt; head -n 10
+&lt;span class="go"&gt;/lib64/ld-linux-x86-64.so.2&lt;/span&gt;
+&lt;span class="go"&gt;bki^&lt;/span&gt;
+&lt;span class="go"&gt; B ,&lt;/span&gt;
+&lt;span class="go"&gt;libpthread.so.0&lt;/span&gt;
+&lt;span class="go"&gt;_ITM_deregisterTMCloneTable&lt;/span&gt;
+&lt;span class="go"&gt;_Jv_RegisterClasses&lt;/span&gt;
+&lt;span class="go"&gt;_ITM_registerTMCloneTable&lt;/span&gt;
+&lt;span class="go"&gt;write&lt;/span&gt;
+&lt;span class="go"&gt;pthread_mutex_destroy&lt;/span&gt;
+&lt;span class="go"&gt;pthread_self&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And, wow, it already has something we haven’t expect, pthread. (More on that later, though.) There are indeed &lt;em&gt;tons&lt;/em&gt; of strings in our executable:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; strings target/release/hello &lt;span class="p"&gt;|&lt;/span&gt; wc
+&lt;span class="go"&gt;   5893    7027   94339&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;94339 printable bytes and 5893 zero bytes (one per line) make almost 100 KB. One sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as &lt;code&gt;strings&lt;/code&gt; also give many false positives, but there are some significant strings as well:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Those starting with &lt;code&gt;jemalloc_&lt;/code&gt; and &lt;code&gt;je_&lt;/code&gt;. These are names from &lt;a href="http://www.canonware.com/jemalloc/"&gt;jemalloc&lt;/a&gt;, a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic &lt;code&gt;malloc&lt;/code&gt;/&lt;code&gt;free&lt;/code&gt;. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Those starting with &lt;code&gt;backtrace_&lt;/code&gt; and &lt;code&gt;DW_&lt;/code&gt;. These are yet another names from libbacktrace, a library to produce stack trace. Rust uses it to print a helpful backtrace on panic (available with &lt;code&gt;RUST_BACKTRACE=1&lt;/code&gt; environment). We don’t panic however.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Those starting with &lt;code&gt;_ZN&lt;/code&gt;. They are “mangled” names from Rust standard libraries.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Why do we have those strings at first place? They are debug symbols, which give an appropriate (possibly human-readable) name for otherwise machine-processed binary. Do you remember libbacktrace above? It has to use those debug symbols to print any useful information. Yet, since we are really making a release build we may choose not to include them. (Rust does not have this option by itself, since it is typically stripped by an external utility called &lt;code&gt;strip&lt;/code&gt;.) So let’s look at what can be done about them.&lt;/p&gt;
+&lt;h2&gt;Debug symbols, get off my lawn!&lt;/h2&gt;
+&lt;p&gt;So we have three goals: no jemalloc, no libbacktrace, and no debug symbols. I’ve mentioned that &lt;code&gt;strip&lt;/code&gt; strips debug symbols, so let’s do that first. Note that &lt;code&gt;strip&lt;/code&gt; also comes with binutils, so you can just run that.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; target/release/hello
+&lt;span class="go"&gt;Hello, world!&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 347648 May 31 20:23 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now that IS smaller! About a half of the entire executable was for debugging symbols. Now that, having stripped our symbols, we cannot have a nice backtrace nor panic recovery:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; sed -i.bak s/println/panic/ src/main.rs
+&lt;span class="gp"&gt;$&lt;/span&gt; cat src/main.rs
+&lt;span class="go"&gt;fn main() {&lt;/span&gt;
+&lt;span class="go"&gt;    panic!(&amp;quot;Hello, world!&amp;quot;);&lt;/span&gt;
+&lt;span class="go"&gt;}&lt;/span&gt;
+
+&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="nv"&gt;RUST_BACKTRACE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt; target/release/hello
+&lt;span class="go"&gt;thread &amp;#39;&amp;lt;main&amp;gt;&amp;#39; panicked at &amp;#39;Hello, world!&amp;#39;, src/main.rs:2&lt;/span&gt;
+&lt;span class="go"&gt;stack backtrace:&lt;/span&gt;
+&lt;span class="go"&gt;   1:     0x7fde451c1e41 - &amp;lt;unknown&amp;gt;&lt;/span&gt;
+&lt;span class="go"&gt;Illegal instruction&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; mv src/main.rs.bak src/main.rs     &lt;span class="c1"&gt;# tidy it up&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;…and it somehow aborted. Probably a libbacktrace issue, I don’t know, but that doesn’t harm much anyway.&lt;/p&gt;
+&lt;h2&gt;Knocking jemalloc down&lt;/h2&gt;
+&lt;p&gt;We have knocked debug symbols down, now let’s get rid of remaining libraries. A bad news: From this point you are entering the realm of nightly Rust. The realm is not as scary as you think, as it does not break at your face, but it may break in smaller ways (that’s why we have nightlies!). That’s the major reason that we don’t yet have nightly features in stable, they may change. Fortunately features we are going to use have been quite stable and you can probably follow the remainder of this post with more recent nightlies. But for the posteriority, I will stick to a particular nightly version.&lt;/p&gt;
+&lt;p&gt;A good news: Installing nightlies (either the latest or any specific) is very simple with rustup.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; rustup override &lt;span class="nb"&gt;set&lt;/span&gt; nightly-2016-05-31
+&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 620490 May 31 20:35 target/release/hello*&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 351520 May 31 20:35 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Okay, the size hadn’t changed much. Let’s knock jemalloc down first—it is well documented in &lt;a href="https://doc.rust-lang.org/book/custom-allocators.html"&gt;the Book&lt;/a&gt;, but the gist is that it just takes two additional lines to change an allocator:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="cp"&gt;#![feature(alloc_system)]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="k"&gt;extern&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;crate&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;alloc_system&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;println&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Hello, world!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And that again does make a difference:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 210364 May 31 20:39 target/release/hello*&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 121792 May 31 20:39 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Okay! We have down from 600 whooping kilobytes to about 120 KB. Jemalloc indeed is a big library; it really has &lt;a href="http://www.canonware.com/download/jemalloc/jemalloc-latest/doc/jemalloc.html"&gt;tons of configuration&lt;/a&gt; so that you can fine-tune its performance, and that has to go somewhere.&lt;/p&gt;
+&lt;h2&gt;No panic, no gain&lt;/h2&gt;
+&lt;p&gt;We are now left with libbacktrace. We don’t panic so we don’t need to print a backtrace, right? Well, we have reached a limit: libbacktrace is deeply integrated to the standard library, and the only way to avoid it is not to use libstd. Quite a dead end.&lt;/p&gt;
+&lt;p&gt;But that is not the end of story. Panicking gives us a backtrace, but also an ability to unwind anything. And unwinding is supported by yet another bit of code called libunwind. It turns out that we &lt;em&gt;can&lt;/em&gt; get rid of this by disabling unwinding. Put this to Cargo.toml:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;[profile.release]&lt;/span&gt;
+&lt;span class="na"&gt;lto&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+&lt;span class="na"&gt;panic&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;abort&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And we can see some effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 200131 May 31 20:44 target/release/hello*&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 113472 May 31 20:44 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;And that’s it!&lt;/strong&gt; It is about the end of story if you don’t want to change the code.&lt;/p&gt;
+&lt;h2&gt;Intermission: Linkage&lt;/h2&gt;
+&lt;p&gt;Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The &lt;em&gt;fair&lt;/em&gt; comparison would be as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; touch *.c *.cpp
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c &lt;span class="nv"&gt;CFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static -s&amp;#39;&lt;/span&gt;
+&lt;span class="go"&gt;cc -Os -flto -static    hello-c.c   -o hello-c&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-cpp &lt;span class="nv"&gt;CXXFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static -static-libstdc++ -s&amp;#39;&lt;/span&gt;
+&lt;span class="go"&gt;g++ -Os -flto -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al hello-c hello-cpp
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir  795904 May 31 20:50 hello-c*&lt;/span&gt;
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 1365720 May 31 20:50 hello-cpp*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Also the Rust binary needs to be rebuilt:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cargo rustc --release -- -C link-args&lt;span class="o"&gt;=&lt;/span&gt;-static
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 105216 May 31 20:51 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Okay, so it seems that Rust was actually far, &lt;em&gt;far&lt;/em&gt; better than C and C++. But… why is it “fair”? Isn’t an 1 MB executable too much for such a simple program regardless of the language?&lt;/p&gt;
+&lt;p&gt;A binary executable is not a simple data format. It is normally processed and often altered by an OS routine called a “dynamic linker” (not to be confused an aforementioned “linker”). The use of dynamic linker allows programs to &lt;em&gt;dynamically&lt;/em&gt; link to other (often common) libraries including the system ones, and until now we was implicitly linking to the C and C++’s standard libraries—glibc and libstdc++ in this case! Rust does not (well, almost) make use of them however, so the entire comparison was unfair to Rust.&lt;/p&gt;
+&lt;p&gt;This kind of &lt;strong&gt;dynamic linkage&lt;/strong&gt; is a double-edged sword. It makes trivial to update libraries used by multiple programs and in theory the total binary size should be reduced. There is a strong minority against dynamic linkage though, as it also makes trivial to &lt;em&gt;break&lt;/em&gt; libraries (dynamic linker is not like Cargo, how pity) and its effect on the total binary size has been exaggerated. To elaborate on the latter, earlier in this post I’ve mentioned a problem that the LTO eventually solves, and the dynamic linkage suffers from the same problem but without no solution—LTO on dynamic library would ruin its advantage.&lt;/p&gt;
+&lt;p&gt;But in spite of those problems, dynamic linkage remains a popular choice for many platforms and especially C and C++ standard libraries are often only available as a dynamic library. Yeah, we instructed the linker to statically link everything, but &lt;a href="https://stackoverflow.com/questions/8140439/why-would-it-be-impossible-to-fully-statically-link-an-application"&gt;glibc lies&lt;/a&gt; and some functions still require the dynamic library:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="c1"&gt;# restore debug symbols&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; touch *.c
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c &lt;span class="nv"&gt;CFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static&amp;#39;&lt;/span&gt;
+&lt;span class="go"&gt;cc -Os -flto -static    hello-c.c   -o hello-c&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; strings hello-c &lt;span class="p"&gt;|&lt;/span&gt; grep dlopen
+&lt;span class="go"&gt;shared object cannot be dlopen()ed&lt;/span&gt;
+&lt;span class="go"&gt;dlopen&lt;/span&gt;
+&lt;span class="go"&gt;invalid mode for dlopen()&lt;/span&gt;
+&lt;span class="go"&gt;do_dlopen&lt;/span&gt;
+&lt;span class="go"&gt;sdlopen.o&lt;/span&gt;
+&lt;span class="go"&gt;dlopen_doit&lt;/span&gt;
+&lt;span class="go"&gt;__dlopen&lt;/span&gt;
+&lt;span class="go"&gt;__libc_dlopen_mode&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It is actually a clever way to make a near-static library with some dynamic-only features (iconv for example). Of course, if you depend on those features you are doomed. That aside, however, you need to enable static linkage in the linker side to avoid biases; &lt;code&gt;-static&lt;/code&gt; linker option is therefore necessary. It is very interesting to see that the Rust binary is actually &lt;em&gt;smaller&lt;/em&gt; after the static linkage. It does depend on the C standard library but only a little bit (standard I/O completely bypasses &lt;code&gt;stdio&lt;/code&gt;, for example), so it did manage to escape the weight of glibc somehow.&lt;/p&gt;
+&lt;p&gt;The picture has changed so much that the comparison still looks biased. It is all a fault of glibc after all! There are several libc alternatives, and &lt;a href="https://www.musl-libc.org/"&gt;musl&lt;/a&gt; is a promising one. It results in very compact binary even after static linkage:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; touch *.c
+&lt;span class="gp"&gt;$&lt;/span&gt; make hello-c &lt;span class="nv"&gt;CFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-Os -flto -static -s&amp;#39;&lt;/span&gt; &lt;span class="nv"&gt;CC&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;musl-gcc
+&lt;span class="go"&gt;musl-gcc -Os -flto -static -s    hello-c.c   -o hello-c&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al hello-c
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 5328 May 31 20:59 hello-c*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Can we use musl in Rust? Of course. You can install standard libraries for other targets with &lt;code&gt;rustup&lt;/code&gt;. This time &lt;code&gt;-C link-args=-static&lt;/code&gt; is not necessary as musl links statically by default.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; rustup target install x86_64-unknown-linux-musl
+&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release --target&lt;span class="o"&gt;=&lt;/span&gt;x86_64-unknown-linux-musl
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/x86_64-unknown-linux-musl/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 263743 May 31 21:07 target/x86_64-unknown-linux-musl/release/hello*&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/x86_64-unknown-linux-musl/release/hello
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/x86_64-unknown-linux-musl/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 165448 May 31 21:07 target/x86_64-unknown-linux-musl/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Okay, so this is finally the fair comparison. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.&lt;/p&gt;
+&lt;p&gt;There is yet another approach for the fairness. What if we can use dynamic linkage for Rust? This completely ruins the distribution until every OS ships with Rust standard library, but well, worth trying. Note that LTO, custom allocator and different panic strategy is not compatible to dynamic linkage, so you have to revert them first.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; cargo rustc --release -- -C prefer-dynamic
+&lt;span class="gp"&gt;$&lt;/span&gt; ls -al target/release/hello
+&lt;span class="go"&gt;-rwxrwxr-x 1 lifthrasiir 8831 May 31 21:10 target/release/hello*&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So this is comparable to ordinary C/C++ programs with dynamic linkage. Mostly a curiosity in this case though.&lt;/p&gt;
+&lt;h2&gt;Say goodbye to libstd&lt;/h2&gt;
+&lt;p&gt;We have so far looked at reducing the executable size without changing your code a lot. But if you are willing to pay some cost for that, you may result in much smaller executable. Note: This is &lt;em&gt;not&lt;/em&gt; recommended in general, this section is going to be a strict cost-effect analysis.&lt;/p&gt;
+&lt;p&gt;We all know that libstd is friendly and convenient, but sometimes it is too much (and it is a source of libbacktrace and libunwind that we don’t really use). Start by avoiding libstd first. The Book has a whole section about &lt;a href="https://doc.rust-lang.org/book/no-stdlib.html"&gt;no stdlib mode&lt;/a&gt;, so let’s follow that. A new source code is as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="cp"&gt;#![feature(lang_items, start)]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="cp"&gt;#![no_std]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="k"&gt;extern&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;crate&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="cp"&gt;#[start]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_argc&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_argv&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;u8&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="c1"&gt;// as we are passing a C string,&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="c1"&gt;// the final null character is mandatory&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;HELLO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="nb"&gt;&amp;#39;static&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;str&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Hello, world!&lt;/span&gt;&lt;span class="se"&gt;\n\0&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;unsafe&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;printf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;HELLO&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;as_ptr&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;as&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="cp"&gt;#[lang = &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;eh_personality&amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;]&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;extern&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;eh_personality&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="cp"&gt;#[lang = &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;panic_fmt&amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;]&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;extern&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;panic_fmt&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;loop&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{}&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And you need to add a dependency to the &lt;code&gt;libc&lt;/code&gt; crate in Cargo.toml:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;[dependencies]&lt;/span&gt;
+&lt;span class="na"&gt;libc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;{ version = &amp;quot;0.2&amp;quot;, default-features = false }&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;That’s it! It is very close to what you would get with C program: 8503 bytes before &lt;code&gt;strip&lt;/code&gt;, 6288 bytes after &lt;code&gt;strip&lt;/code&gt;. (I’m tried of faking the console up (note the modified time), so I’ll omit them from now on.) musl goes further, but you need to give an additional option to properly link the &lt;code&gt;libc&lt;/code&gt; crate to musl:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;RUSTFLAGS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;-L native=/usr/lib/x86_64-linux-musl&amp;#39;&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; cargo build --release --target&lt;span class="o"&gt;=&lt;/span&gt;x86_64-unknown-linux-musl
+&lt;span class="gp"&gt;$&lt;/span&gt; strip target/x86_64-unknown-linux-musl/release/hello
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now we are down to 5360 bytes. Only 32 bytes behind the best C program! How can we do better? Instead of using stdio, you can use the direct system call (in Unix, of course):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="cp"&gt;#[start]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_argc&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_argv&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;u8&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;HELLO&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="nb"&gt;&amp;#39;static&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;str&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Hello, world!&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;unsafe&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;STDOUT_FILENO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="n"&gt;HELLO&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;as_ptr&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;as&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;HELLO&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;len&lt;/span&gt;&lt;span class="p"&gt;());&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This strips yet another bits of binary and weighs 5072 bytes after &lt;code&gt;strip&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;One may argue that the above is not a real Rust code, but a Rust-esque code depending on Unix system calls. Fine. No real Rust code would look like that. Instead we can make our own &lt;code&gt;Stdout&lt;/code&gt; type, wired directly to system calls, and use ordinary formatting macros:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;use&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;core&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Write&lt;/span&gt;&lt;span class="p"&gt;};&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="k"&gt;struct&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Stdout&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="k"&gt;impl&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Write&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Stdout&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;write_str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="k"&gt;mut&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="kt"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="nb"&gt;Result&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;unsafe&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;libc&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;STDOUT_FILENO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                        &lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;as_ptr&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;as&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;len&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;};&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;len&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;as&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nb"&gt;Ok&lt;/span&gt;&lt;span class="p"&gt;(())&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nb"&gt;Err&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Error&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="cp"&gt;#[start]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_argc&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_argv&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="kr"&gt;const&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;u8&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;isize&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;writeln&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="k"&gt;mut&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Stdout&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;Hello, world!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is indeed much more natural Rust code. It weighs 9248 bytes after &lt;code&gt;strip&lt;/code&gt;, suggesting that the minimal formatting code costs about 4 KB. Other types impose more overhead though; printing &lt;code&gt;3.14f64&lt;/code&gt; for example costs about 25 KB of additional binary, as &lt;a href="https://github.com/rust-lang/rust/pull/24612"&gt;floating-to-decimal conversion is hard&lt;/a&gt;. Also mind that this never buffers (except for the internal kernel buffer for pipes).&lt;/p&gt;
+&lt;h2&gt;And another thing...&lt;/h2&gt;
+&lt;p&gt;We can go much further even from this point, our executable still contains seemingly unused chunk of bytes. Welcome to the realm of actual low-level programming (in contrast to &lt;em&gt;lower-level&lt;/em&gt; programming we normally do with C/C++). This area has been very thoroughly explored by pioneers however, so I will end the trip by linking to them:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Keegan McAllister made a &lt;a href="http://mainisusuallyafunction.blogspot.kr/2015/01/151-byte-static-linux-binary-in-rust.html"&gt;151-byte x86-64 Linux program&lt;/a&gt; printing “Hello!”. Well, that’s not we wanted though, and the proper “Hello, world!” program will probably cost 165 bytes; the original program (ab)used the ELF header to put the string constant but there is not much space to put a longer “Hello, world!”.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Peter Atashian made a &lt;a href="https://github.com/retep998/hello-rs/blob/master/windows/src/main.rs"&gt;1536-byte Windows program&lt;/a&gt; printing “Hello world!” (note no comma). I’m less sure about the size of the proper program, but yeah, you have an idea. This is notable because Windows essentially forces you to use dynamic linkage (Windows system call is not stable across versions), and the dynamic symbol table costs bytes.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;For the comparison and your geeky pleasure, the shortest known version of x86-64 Linux program printing “Hello, world” costs (note no exclamation mark) only &lt;a href="http://www.muppetlabs.com/~breadbox/software/tiny/hello.asm.txt"&gt;62 bytes&lt;/a&gt;. The general technique is better explained in &lt;a href="http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html"&gt;this classical article&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Hey, I’ve learned the hard way that we have tons of variations over the “Hello, world!” programs, none of those programs print the proper and longest version of greeting!&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Compile with &lt;code&gt;--release&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Before the distribution, enable LTO and strip the binary.&lt;/li&gt;
+&lt;li&gt;If your program is not memory-intensive, use the system allocator (assuming nightly).&lt;/li&gt;
+&lt;li&gt;I didn’t mention this because it doesn’t improve such a small program, but you can also try &lt;a href="http://upx.sourceforge.net/"&gt;UPX&lt;/a&gt; and other executable compressors if you are working with much larger application.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That’s all, folks!&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-03-06</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-03-06.html" rel="alternate"></link><published>2015-03-06T03:23:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-03-06:rustlog/worklog-2015-03-06.html</id><summary type="html">&lt;p&gt;I have recently pushed three pull requests into Rust:
 &lt;a href="https://github.com/rust-lang/rust/pull/22839"&gt;#22839&lt;/a&gt;, &lt;a href="https://github.com/rust-lang/rust/pull/22971"&gt;#22971&lt;/a&gt; and &lt;a href="https://github.com/rust-lang/rust/pull/23060"&gt;#23060&lt;/a&gt;.
 Each has its own significance,
 but today I'll discuss about last two PRs
@@ -198,7 +567,7 @@ as my initial goal was just to reduce some 30% of metadata.
 Actually I was able to reduce 30% of &lt;em&gt;entire&lt;/em&gt; tarball. Great.&lt;/p&gt;
 &lt;p&gt;There are still many possible improvements on the distribution size.
 I welcome any suggestion, concrete proposal or implementation;
-I hope this post to motivate anyone interested in this task.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-02-19</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-02-19.html" rel="alternate"></link><updated>2015-02-19T23:12:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-02-19:rustlog/worklog-2015-02-19.html</id><summary type="html">&lt;p&gt;Long time no see.
+I hope this post to motivate anyone interested in this task.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-02-19</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-02-19.html" rel="alternate"></link><published>2015-02-19T23:12:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-02-19:rustlog/worklog-2015-02-19.html</id><summary type="html">&lt;p&gt;Long time no see.
 My daily job and other various distractions
 prevented me from doing a continuous work like blogging.
 Well, I finally finished &lt;a href="https://github.com/lifthrasiir/rust-chrono/blob/0.2/CHANGELOG.md#020-2015-02-19"&gt;Chrono 0.2&lt;/a&gt; up
@@ -228,7 +597,7 @@ five different formatting items:
 Chrono decouples a formatting syntax from
 the actual meaning of formatting items,
 so they have the following (somewhat verbose) internal representations:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
@@ -254,7 +623,7 @@ Instead, Chrono returns an &lt;code&gt;Iterator&lt;/code&gt; of formatting items
 and directly consumes that iterator
 for printing the date and time.
 Therefore the following identity holds:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;StrftimeItems&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;new&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;%Y-%m-%d&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;collect&lt;/span&gt;&lt;span class="o"&gt;::&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Vec&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;StrftimeItems&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;new&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;%Y-%m-%d&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;collect&lt;/span&gt;&lt;span class="o"&gt;::&amp;lt;&lt;/span&gt;&lt;span class="nb"&gt;Vec&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;           &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Year&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Literal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;-&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="n"&gt;Item&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Numeric&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Month&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Pad&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Zero&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
@@ -334,14 +703,14 @@ which has to be merged into actual values via the &lt;strong&gt;resolution algor
 &lt;a href="https://tools.ietf.org/html/rfc2822#section-3.3"&gt;RFC 2822 date and time format&lt;/a&gt; has a day of week part,
 which should be consistent to other date parts when specified.
 But &lt;code&gt;strptime&lt;/code&gt;-based parse would happily accept inconsistent input:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
-&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Wed, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-                  &lt;span class="s"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Wed, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s1"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s1"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;struct_time&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tm_year&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2014&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mon&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;31&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
                  &lt;span class="n"&gt;tm_hour&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_min&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_sec&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
                  &lt;span class="n"&gt;tm_wday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_yday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_isdst&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Thu, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
-                  &lt;span class="s"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;strptime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Thu, 31 Dec 2014 04:26:40 +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                  &lt;span class="s1"&gt;&amp;#39;%a, &lt;/span&gt;&lt;span class="si"&gt;%d&lt;/span&gt;&lt;span class="s1"&gt; %b %Y %H:%M:%S +0000&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
 &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;struct_time&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tm_year&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;2014&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mon&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_mday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;31&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
                  &lt;span class="n"&gt;tm_hour&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_min&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;26&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_sec&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
                  &lt;span class="n"&gt;tm_wday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_yday&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;365&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tm_isdst&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -373,7 +742,7 @@ who brought the problem of local date handling in the &lt;a href="https://www.re
 This post crucially helped me finishing the work and releasing 0.2.
 I wish others give a feedback for Chrono like that,
 so Chrono doesn't remain an library "considered annoying but designed so",
-which situation I really don't like.&lt;/p&gt;</summary></entry><entry><title>Summary of Korean Rust Meetup #4</title><link href="https://lifthrasiir.github.io/rustlog/summary-of-korean-rust-meetup-4.html" rel="alternate"></link><updated>2015-01-20T11:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-20:rustlog/summary-of-korean-rust-meetup-4.html</id><summary type="html">&lt;p&gt;As I've &lt;a href="worklog-2015-01-17.html"&gt;promised&lt;/a&gt; before,
+which situation I really don't like.&lt;/p&gt;</summary></entry><entry><title>Summary of Korean Rust Meetup #4</title><link href="https://lifthrasiir.github.io/rustlog/summary-of-korean-rust-meetup-4.html" rel="alternate"></link><published>2015-01-20T11:17:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-20:rustlog/summary-of-korean-rust-meetup-4.html</id><summary type="html">&lt;p&gt;As I've &lt;a href="worklog-2015-01-17.html"&gt;promised&lt;/a&gt; before,
 this is a summary of the 4th Korean Rust Meetup
 hosted by &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;,
 where people concentrate on getting things done
@@ -414,7 +783,7 @@ This is partly because the meetup was co-located with other meetups
 (such as &lt;a href="https://ko-kr.facebook.com/pyjog"&gt;PyJog&lt;/a&gt;).
 Having 1.0.0 alpha surely was good for them!
 I'm looking forward to the next meetup,
-which would likely be on the next month (February 2015).&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-17</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-17.html" rel="alternate"></link><updated>2015-01-18T03:58:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-18:rustlog/worklog-2015-01-17.html</id><summary type="html">&lt;p&gt;In the case you don't know,
+which would likely be on the next month (February 2015).&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-17</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-17.html" rel="alternate"></link><published>2015-01-18T03:58:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-18:rustlog/worklog-2015-01-17.html</id><summary type="html">&lt;p&gt;In the case you don't know,
 there are a number of Korean people interested in and working with Rust.
 Consequently, the emergence of &lt;a href="http://rust-kr.org/"&gt;Korean Rust User Group&lt;/a&gt;
 should be evident.
@@ -445,7 +814,7 @@ since the code and verification data are integrated.
 For example, the &lt;code&gt;run-make/rustdoc-where&lt;/code&gt; test uses
 this verification script
 to check if the &lt;code&gt;where&lt;/code&gt; clause is present in the output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;grep &lt;span class="s2"&gt;&amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/struct.Alpha.html &amp;gt; /dev/null
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;grep &lt;span class="s2"&gt;&amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/struct.Alpha.html &amp;gt; /dev/null
 &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Alpha&amp;quot;&lt;/span&gt;
 grep &lt;span class="s2"&gt;&amp;quot;Bravo.*where.*B:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/trait.Bravo.html &amp;gt; /dev/null
 &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Bravo&amp;quot;&lt;/span&gt;
@@ -453,7 +822,7 @@ grep &lt;span class="s2"&gt;&amp;quot;charlie.*where.*C:.*MyTrait&amp;quot;&lt;/
 &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Charlie&amp;quot;&lt;/span&gt;
 grep &lt;span class="s2"&gt;&amp;quot;impl.*Delta.*where.*D:.*MyTrait&amp;quot;&lt;/span&gt; &lt;span class="nv"&gt;$DOC&lt;/span&gt;/struct.Delta.html &amp;gt; /dev/null
 &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;Delta&amp;quot;&lt;/span&gt;
-&lt;span class="c"&gt;# and so on&lt;/span&gt;
+&lt;span class="c1"&gt;# and so on&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
@@ -461,7 +830,7 @@ grep &lt;span class="s2"&gt;&amp;quot;impl.*Delta.*where.*D:.*MyTrait&amp;quot;&
 the actual source code being compiled.
 With this PR, the following Rust code
 can also be used to verify its Rustdoc output:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c1"&gt;// @matches foo/struct.Alpha.html &amp;#39;//pre&amp;#39; &amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;// @matches foo/struct.Alpha.html &amp;#39;//pre&amp;#39; &amp;quot;Alpha.*where.*A:.*MyTrait&amp;quot;&lt;/span&gt;
 &lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;struct&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Alpha&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;where&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;A&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;MyTrait&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 
 &lt;span class="c1"&gt;// @matches foo/trait.Bravo.html &amp;#39;//pre&amp;#39; &amp;quot;Bravo.*where.*B:.*MyTrait&amp;quot;&lt;/span&gt;
@@ -503,7 +872,7 @@ If we can get a reasonable performance with a link checker in Python,
 it would be great.
 (The link checker based on &lt;code&gt;html5ever&lt;/code&gt; might be useful for
 &lt;a href="https://github.com/rust-lang/rust/issues/20827"&gt;bigger testing infrastructure&lt;/a&gt;, though.)&lt;/p&gt;
-&lt;p&gt;Oh, and as aside I should really resume working on &lt;a href="https://github.com/rust-lang/rust/pull/19606"&gt;#19606&lt;/a&gt;...&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-14</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-14.html" rel="alternate"></link><updated>2015-01-15T02:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-15:rustlog/worklog-2015-01-14.html</id><summary type="html">&lt;p&gt;A day for smaller works. :)&lt;/p&gt;
+&lt;p&gt;Oh, and as aside I should really resume working on &lt;a href="https://github.com/rust-lang/rust/pull/19606"&gt;#19606&lt;/a&gt;...&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-14</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-14.html" rel="alternate"></link><published>2015-01-15T02:17:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-15:rustlog/worklog-2015-01-14.html</id><summary type="html">&lt;p&gt;A day for smaller works. :)&lt;/p&gt;
 &lt;p&gt;I've updated the horribly outdated &lt;a href="http://cosmic.mearie.org/2014/01/periodic-table-of-rust-types/"&gt;Periodic Table&lt;/a&gt; of Rust Types.
 The resulting table seems a lot clearer than the previous.
 I've also received a series of suggestions and
@@ -514,7 +883,7 @@ but this is slightly undermaintained than &lt;a href="https://github.com/mvdnes/
 and I basically kept it just compilable in the recent nightly.
 In the long term I plan to merge some design of rust-zip into zip-rs,
 and as a preparation I've separated this into a separate crate.
-&lt;code&gt;MaybeUTF8&lt;/code&gt; was what newer nightlies liked to break, anyway.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html" rel="alternate"></link><updated>2015-01-14T02:19:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-14:rustlog/worklog-2015-01-13.html</id><summary type="html">&lt;p&gt;I've finally got the initial design of &lt;a href="https://github.com/lifthrasiir/rust-chrono/tree/0.2/"&gt;Chrono 0.2&lt;/a&gt; working.
+&lt;code&gt;MaybeUTF8&lt;/code&gt; was what newer nightlies liked to break, anyway.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-13.html" rel="alternate"></link><published>2015-01-14T02:19:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-14:rustlog/worklog-2015-01-13.html</id><summary type="html">&lt;p&gt;I've finally got the initial design of &lt;a href="https://github.com/lifthrasiir/rust-chrono/tree/0.2/"&gt;Chrono 0.2&lt;/a&gt; working.
 It took so much time, partially because
 I'm working on dozens of other projects including Rust libraries.
 It solves one of the major annoyance with Chrono,
@@ -551,7 +920,7 @@ This decision is partly because
 we would only have a handful number of &lt;code&gt;Offset&lt;/code&gt; implementations,
 so we have to implement them anyway.
 In the end, we had something like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;trait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Offset&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Clone&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Show&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;trait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Offset&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Clone&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Show&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;local_minus_utc&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Duration&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;from_local_date&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;local&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="n"&gt;NaiveDate&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;LocalResult&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Date&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Self&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
@@ -621,7 +990,7 @@ but I was not sure how to do that.&lt;/p&gt;
 a game changer for this problem.
 They allow for two types to be smoothly connected in the compile time.
 The resulting design is as follows:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;trait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Offset&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Sized&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Clone&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Show&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;pub&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;trait&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Offset&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Sized&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;Clone&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;fmt&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;Show&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;local_minus_utc&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Duration&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 
@@ -709,7 +1078,7 @@ and we need to implement it.&lt;/p&gt;
 but even after &lt;code&gt;#![feature(associated_types)]&lt;/code&gt; is gone
 associated types are still cutting edge features.
 I had to disable debuginfo due to the Rust issue &lt;a href="https://github.com/rust-lang/rust/issues/21010"&gt;#21010&lt;/a&gt;, for example.
-Hopefully though, this shall not affect the validity of this design.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-10</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-10.html" rel="alternate"></link><updated>2015-01-11T03:51:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-11:rustlog/worklog-2015-01-10.html</id><summary type="html">&lt;p&gt;Okay, I was so frantic about the language updates and
+Hopefully though, this shall not affect the validity of this design.&lt;/p&gt;</summary></entry><entry><title>Worklog 2015-01-10</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2015-01-10.html" rel="alternate"></link><published>2015-01-11T03:51:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2015-01-11:rustlog/worklog-2015-01-10.html</id><summary type="html">&lt;p&gt;Okay, I was so frantic about the language updates and
 went to (mostly) the library maintenance mode.
 If you saw &lt;code&gt;encoding&lt;/code&gt; or &lt;code&gt;chrono&lt;/code&gt; from &lt;a href="https://crates.io/"&gt;crates.io&lt;/a&gt; a lot,
 that's because I tended to update per &lt;em&gt;each&lt;/em&gt; breaking nightly.&lt;/p&gt;
@@ -730,7 +1099,7 @@ It then maintains two approximate ranges
 for the actual range in which values would round to that number;
 one overestimates, another underestimates.
 Quoting the diagram in the comments:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;        +- actual range of minus
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;        +- actual range of minus
   | &amp;lt;---|---------------------- unsafe region --------------------------&amp;gt; |
   |     |                                                                 |
   |  |&amp;lt;---&amp;gt;|  | &amp;lt;--------------- safe region ---------------&amp;gt; |           |
@@ -798,7 +1167,7 @@ I'm currently studying the C++ implementation for possible resolution.&lt;/p&gt;
   so it can impact the real world performance of Grisu.&amp;#160;&lt;a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text"&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;/div&gt;</summary></entry><entry><title>Worklog 2014-12-20</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-20.html" rel="alternate"></link><updated>2014-12-21T00:01:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-21:rustlog/worklog-2014-12-20.html</id><summary type="html">&lt;p&gt;This week we saw another series of breakages via the macro syntax reform. :)
+&lt;/div&gt;</summary></entry><entry><title>Worklog 2014-12-20</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-20.html" rel="alternate"></link><published>2014-12-21T00:01:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-21:rustlog/worklog-2014-12-20.html</id><summary type="html">&lt;p&gt;This week we saw another series of breakages via the macro syntax reform. :)
 I still didn't have much time to keep up,
 so I mostly did the minimal maintenance work,
 but still there are some significant tasks I've done this week:&lt;/p&gt;
@@ -813,7 +1182,7 @@ but still there are some significant tasks I've done this week:&lt;/p&gt;
 &lt;li&gt;I worked on the floating-point printing code of &lt;a href="https://github.com/lifthrasiir/rust-strconv"&gt;rust-strconv&lt;/a&gt;
   during the Korean Rust meetup today.
   I think I can release the initial version this week.&lt;/li&gt;
-&lt;/ul&gt;</summary></entry><entry><title>Worklog 2014-12-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-13.html" rel="alternate"></link><updated>2014-12-13T23:59:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-13:rustlog/worklog-2014-12-13.html</id><summary type="html">&lt;p&gt;Due to the personal concerns I haven't do much things, but at least...&lt;/p&gt;
+&lt;/ul&gt;</summary></entry><entry><title>Worklog 2014-12-13</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-13.html" rel="alternate"></link><published>2014-12-13T23:59:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-13:rustlog/worklog-2014-12-13.html</id><summary type="html">&lt;p&gt;Due to the personal concerns I haven't do much things, but at least...&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;I've updated &lt;a href="https://github.com/lifthrasiir/rust-encoding/"&gt;rust-encoding&lt;/a&gt; and &lt;a href="https://github.com/lifthrasiir/rust-chrono"&gt;rust-chrono&lt;/a&gt; for opt-in &lt;code&gt;Copy&lt;/code&gt;.&lt;/li&gt;
 &lt;li&gt;I've pushed a small &lt;a href="https://github.com/rust-lang/rust/issues/19719"&gt;fix&lt;/a&gt; for &lt;a href="https://github.com/rust-lang/rust/pull/19764"&gt;#19764&lt;/a&gt;.&lt;/li&gt;
@@ -821,14 +1190,14 @@ but still there are some significant tasks I've done this week:&lt;/p&gt;
   started to work on the former. Not much, though.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Unfortunately I didn't have spare time for working on &lt;a href="https://github.com/rust-lang/rust/pull/19606"&gt;#19606&lt;/a&gt;.
-Maybe for the next week.&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-09</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-09.html" rel="alternate"></link><updated>2014-12-10T00:17:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-10:rustlog/worklog-2014-12-09.html</id><summary type="html">&lt;p&gt;Okay, I've released &lt;a href="https://github.com/lifthrasiir/rust-soundchange"&gt;rust-soundchange&lt;/a&gt; with a basic documentation and tests.
+Maybe for the next week.&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-09</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-09.html" rel="alternate"></link><published>2014-12-10T00:17:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-10:rustlog/worklog-2014-12-09.html</id><summary type="html">&lt;p&gt;Okay, I've released &lt;a href="https://github.com/lifthrasiir/rust-soundchange"&gt;rust-soundchange&lt;/a&gt; with a basic documentation and tests.
 I've also pushed a &lt;a href="https://github.com/P1start/an-rs/pull/1"&gt;pull request&lt;/a&gt; to P1start's &lt;code&gt;an-rs&lt;/code&gt;,
 let's see if it really is accepted :)&lt;/p&gt;
 &lt;h2&gt;Notes on &lt;code&gt;english.sc&lt;/code&gt;&lt;/h2&gt;
 &lt;p&gt;&lt;a href="http://zompist.com/spell.html"&gt;Mark Rosenfelder's article&lt;/a&gt; links to a computerized rule file,
 which I've used as a basis of rust-soundchange rules.
 After some debugging, however, I found that the following rule is incorrect:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;Incorrect&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="sr"&gt;/@/&lt;/span&gt;&lt;span class="n"&gt;VC&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="n"&gt;_l&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;Incorrect&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="sr"&gt;/@/&lt;/span&gt;&lt;span class="n"&gt;VC&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="n"&gt;_l&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;
 &lt;span class="n"&gt;Correct&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;   &lt;span class="n"&gt;U&lt;/span&gt;&lt;span class="sr"&gt;/@/&lt;/span&gt;&lt;span class="n"&gt;VC&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;V&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="n"&gt;_l&lt;/span&gt;&lt;span class="err"&gt;#&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -841,14 +1210,14 @@ The original rule has incorrectly used an "any vowel" (&lt;code&gt;V&lt;/code&gt
 in place of an "any &lt;em&gt;untranslated&lt;/em&gt; vowel" (&lt;code&gt;U&lt;/code&gt;) variable.&lt;/p&gt;
 &lt;p&gt;It seems that &lt;code&gt;english.out&lt;/code&gt; itself is generated via the fixed rules
 (and with this fix my implementation produces 100% exact output for this set)
-but Rosenfelder forgot to update &lt;code&gt;english.sc&lt;/code&gt;. Oops.&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-08</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-08.html" rel="alternate"></link><updated>2014-12-09T02:51:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-09:rustlog/worklog-2014-12-08.html</id><summary type="html">&lt;p&gt;After some wrestling with rustc, I've taken some refresh.
+but Rosenfelder forgot to update &lt;code&gt;english.sc&lt;/code&gt;. Oops.&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-08</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-08.html" rel="alternate"></link><published>2014-12-09T02:51:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-09:rustlog/worklog-2014-12-08.html</id><summary type="html">&lt;p&gt;After some wrestling with rustc, I've taken some refresh.
 I had a grand^Wstupid plan for improving &lt;a href="https://crates.io/crates/an"&gt;an&lt;/a&gt;,
 by implementing a better spell-to-pronounciation algorithm and
 using that to determine if the word starts with a vowel or not.
 (Mostly for fun, but I also wanted to make some useful utility.)
 I've now implemented an entirety of &lt;a href="http://zompist.com/spell.html"&gt;Mark Rosenfelder's algorithm&lt;/a&gt;
 which has some test code like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;spell_to_sound&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;coffee&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;as_slice&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;kòfë&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;spell_to_sound&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;coffee&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;as_slice&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;kòfë&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;spell_to_sound&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;market&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;as_slice&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;môrkêt&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;spell_to_sound&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;ugly&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;as_slice&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;ûglë&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
 &lt;span class="n"&gt;assert_eq&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;spell_to_sound&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;high&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;as_slice&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;quot;hï&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
@@ -859,7 +1228,7 @@ which has some test code like this:&lt;/p&gt;
 &lt;p&gt;...Well, it still fails for some dozens of cases but it looks nice.
 (Here I really mean that this doesn't exactly match the known output of the algorithm.
 Since the algorithm itself is approximate,
-if the bug actually &lt;em&gt;improves&lt;/em&gt; the error rate, I might leave it as is.)&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-06</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-06.html" rel="alternate"></link><updated>2014-12-07T13:09:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-07:rustlog/worklog-2014-12-06.html</id><summary type="html">&lt;p&gt;I was continously working on &lt;a href="https://github.com/rust-lang/rust/issues/15309"&gt;#15309&lt;/a&gt;.
+if the bug actually &lt;em&gt;improves&lt;/em&gt; the error rate, I might leave it as is.)&lt;/p&gt;</summary></entry><entry><title>Worklog 2014-12-06</title><link href="https://lifthrasiir.github.io/rustlog/worklog-2014-12-06.html" rel="alternate"></link><published>2014-12-07T13:09:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-07:rustlog/worklog-2014-12-06.html</id><summary type="html">&lt;p&gt;I was continously working on &lt;a href="https://github.com/rust-lang/rust/issues/15309"&gt;#15309&lt;/a&gt;.
 Basically, Rustdoc has a link to the source code and
 &lt;em&gt;some&lt;/em&gt; items have gotten their links incorrect.
 This is proved quite hard to solve, as I've outlined the cause,
@@ -872,7 +1241,7 @@ to track almost every information across multiple crates.&lt;/p&gt;
 The metadata occupies a custom section in the excutable files or
 a self-explanatory file name &lt;code&gt;rust.metadata.bin&lt;/code&gt; in rlibs.
 Any standard utilities on those files can be used to see them:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;readelf /usr/local/rust/lib/libstd-4e7c5e5c.so -S &lt;span class="p"&gt;|&lt;/span&gt; grep rustc -A1
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ readelf /usr/local/rust/lib/libstd-4e7c5e5c.so -S &lt;span class="p"&gt;|&lt;/span&gt; grep rustc -A1
   &lt;span class="o"&gt;[&lt;/span&gt;25&lt;span class="o"&gt;]&lt;/span&gt; .note.rustc       NOTE             00000000002ebaf0  000ebaf0
        00000000001da82a  &lt;span class="m"&gt;0000000000000000&lt;/span&gt;  WA       &lt;span class="m"&gt;0&lt;/span&gt;     &lt;span class="m"&gt;0&lt;/span&gt;     16
 &lt;/pre&gt;&lt;/div&gt;
@@ -881,7 +1250,7 @@ Any standard utilities on those files can be used to see them:&lt;/p&gt;
 &lt;p&gt;Note that the metadata can be very huge.
 In this case, the section size is &lt;code&gt;0x1da82a&lt;/code&gt; bytes, i.e. about 1.9 megs.
 How much is that? It's over 60% of the entire executable if you ask that.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;ls -al /usr/local/rust/lib/libstd-4e7c5e5c.so
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ ls -al /usr/local/rust/lib/libstd-4e7c5e5c.so
 -rw-r--r-- &lt;span class="m"&gt;1&lt;/span&gt; arachneng &lt;span class="m"&gt;3197472&lt;/span&gt; Dec  &lt;span class="m"&gt;5&lt;/span&gt; 22:00 /usr/local/rust/lib/libstd-4e7c5e5c.so
 &lt;/pre&gt;&lt;/div&gt;
 
@@ -974,7 +1343,7 @@ We don't have a definite solution, and can only outline general directions:&lt;/
 &lt;li&gt;In general, the metadata should have a good notion
    to uniquely identify the definition independently of the source code change.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;Phew! This post went too far than I first imagined. Hope you enjoyed this.&lt;/p&gt;</summary></entry><entry><title>The Beginning</title><link href="https://lifthrasiir.github.io/rustlog/the-beginning.html" rel="alternate"></link><updated>2014-12-06T18:48:00+09:00</updated><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-06:rustlog/the-beginning.html</id><summary type="html">&lt;p&gt;Hello, and welcome to the first post to the Rustlog!&lt;/p&gt;
+&lt;p&gt;Phew! This post went too far than I first imagined. Hope you enjoyed this.&lt;/p&gt;</summary></entry><entry><title>The Beginning</title><link href="https://lifthrasiir.github.io/rustlog/the-beginning.html" rel="alternate"></link><published>2014-12-06T18:48:00+09:00</published><author><name>Kang Seonghoon</name></author><id>tag:lifthrasiir.github.io,2014-12-06:rustlog/the-beginning.html</id><summary type="html">&lt;p&gt;Hello, and welcome to the first post to the Rustlog!&lt;/p&gt;
 &lt;p&gt;For everyone &lt;em&gt;not&lt;/em&gt; interested about the author:
 I'm &lt;a href="http://mearie.org/about/kang-seonghoon.en"&gt;Kang Seonghoon&lt;/a&gt;, a Korean software developer doing funky things.
 In the world of Rust I'm probably best known for

@@ -32,7 +32,7 @@ using that to determine if the word starts with a vowel or not.
 (Mostly for fun, but I also wanted to make some useful utility.)
 I've now implemented an entirety of <a href="http://zompist.com/spell.html">Mark Rosenfelder's algorithm</a>
 which has some test code like this:</p>
-<div class="highlight"><pre><span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">spell_to_sound</span><span class="p">(</span><span class="s">&quot;coffee&quot;</span><span class="p">).</span><span class="n">as_slice</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;kòfë&quot;</span><span class="p">);</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">spell_to_sound</span><span class="p">(</span><span class="s">&quot;coffee&quot;</span><span class="p">).</span><span class="n">as_slice</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;kòfë&quot;</span><span class="p">);</span><span class="w"></span>
 <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">spell_to_sound</span><span class="p">(</span><span class="s">&quot;market&quot;</span><span class="p">).</span><span class="n">as_slice</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;môrkêt&quot;</span><span class="p">);</span><span class="w"></span>
 <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">spell_to_sound</span><span class="p">(</span><span class="s">&quot;ugly&quot;</span><span class="p">).</span><span class="n">as_slice</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;ûglë&quot;</span><span class="p">);</span><span class="w"></span>
 <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">spell_to_sound</span><span class="p">(</span><span class="s">&quot;high&quot;</span><span class="p">).</span><span class="n">as_slice</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;hï&quot;</span><span class="p">);</span><span class="w"></span>
@@ -47,7 +47,7 @@ if the bug actually <em>improves</em> the error rate, I might leave it as is.)</
 </article>
 
         <footer>
-                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It primarily is a daily worklog of whatever he has done with Rust every day. See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
+                <p>The Rustlog is a weblog for <a href="http://www.rust-lang.org/">Rust</a>-related posts, written by <a href="http://mearie.org/index.en">Kang Seonghoon</a> (aka <em>lifthrasiir</em> and <em>Yurume</em>). It used to be a daily worklog of whatever he has done with Rust every day but he got bored and it is now more like a yearly log (sorry!). See also <a href="./archives">archives</a> and <a href="http://j.mearie.org/">his main journal</a> (mostly in Korean).</p>
                 <p id="theme-credit">Proudly powered by <a href="http://docs.notmyidea.org/alexis/pelican/">pelican</a></p>
         </footer>
 
