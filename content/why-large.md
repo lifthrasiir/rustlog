@@ -241,18 +241,20 @@ $ ls -al target/release/hello
 
 ## Intermission: Linkage
 
-Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The *fair* comparison would be as follows:
+Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The *fair* (well, fair*er*) comparison would be as follows:
 
 ```console
 $ touch *.c *.cpp
-$ make hello-c CFLAGS='-Os -flto -static -s'
-cc -Os -flto -static    hello-c.c   -o hello-c
-$ make hello-cpp CXXFLAGS='-Os -flto -static -static-libstdc++ -s'
-g++ -Os -flto -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp
+$ make hello-c CFLAGS='-Os -flto -Wl,--gc-sections -static -s'
+cc -Os -flto -Wl,--gc-sections -static    hello-c.c   -o hello-c
+$ make hello-cpp CXXFLAGS='-Os -flto -Wl,--gc-sections -static -static-libstdc++ -s'
+g++ -Os -flto -Wl,--gc-sections -static -static-libstdc++    hello-cpp.cpp   -o hello-cpp
 $ ls -al hello-c hello-cpp
--rwxrwxr-x 1 lifthrasiir  795904 May 31 20:50 hello-c*
--rwxrwxr-x 1 lifthrasiir 1365720 May 31 20:50 hello-cpp*
+-rwxrwxr-x 1 lifthrasiir  758704 May 31 20:50 hello-c*
+-rwxrwxr-x 1 lifthrasiir 1127784 May 31 20:50 hello-cpp*
 ```
+
+(Note all the options required to be in line with Rust equivalents. `-Wl,--gc-sections` is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to [Alexis Beingessner and Corey Richardson](https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5) for pointing out it was missing. Rust has that implied by default, and it can be applied independently from LTO, so a fair comparison also needs that.)
 
 Also the Rust binary needs to be rebuilt:
 
@@ -311,7 +313,7 @@ $ ls -al target/x86_64-unknown-linux-musl/release/hello
 -rwxrwxr-x 1 lifthrasiir 165448 May 31 21:07 target/x86_64-unknown-linux-musl/release/hello*
 ```
 
-Okay, so this is finally the fair comparison. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.
+Okay, so this finally looks fair. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.
 
 There is yet another approach for the fairness. What if we can use dynamic linkage for Rust? This completely ruins the distribution until every OS ships with Rust standard library, but well, worth trying. Note that LTO, custom allocator and different panic strategy is not compatible to dynamic linkage, so you have to revert them first.
 
