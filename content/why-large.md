@@ -87,7 +87,7 @@ So the story is as follows: We can individually optimize each crate, and in fact
 
 There is actually a good reason that the traditional linker behaves so. The linker is commonly used in C and C++ languages among others, and each file is compiled individually. This is a sharp difference from Rust where the entire crate is compiled altogether. Unless required functions are scattered throughout files, the linker can fairly easily get rid of unused files at once. It’s not perfect, but reasonably approximate what we want—removing unused functions. One disadvantage is that the compiler is unable to optimize function calls pointing to other files; it simply lacks a required information.
 
-C and C++ folks had been fine with that approximation for decades, but in the recent decade they had enough and started to provide an option to enable the *link-time optimization* (LTO). In this scheme the compiler produces optimized binaries without looking at others, and the linker actively looks at them and tries to optimize binaries. It is much harder than working with (internally simplified) sources, and it blows the compilation time up, but it is worth trying if the smaller and/or faster executable is needed.
+C and C++ folks had been fine with that approximation for decades, but in the recent decades they had enough and started to provide an option to enable the *link-time optimization* (LTO). In this scheme the compiler produces optimized binaries without looking at others, and the linker actively looks at them and tries to optimize binaries. It is much harder than working with (internally simplified) sources, and it blows the compilation time up, but it is worth trying if the smaller and/or faster executable is needed.
 
 So far we have talked about C and C++, but the LTO is much more beneficial for Rust. `Cargo.toml` has an option to enable LTO:
 
@@ -136,7 +136,7 @@ $ strings target/release/hello | wc
 
 * Those starting with `jemalloc_` and `je_`. These are names from [jemalloc](http://www.canonware.com/jemalloc/), a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic `malloc`/`free`. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.
 
-* Those starting with `backtrace_` and `DW_`. These are yet another names from libbacktrace, a library to produce stack trace. Rust uses it to print a helpful backtrace on panic (available with `RUST_BACKTRACE=1` environment). We don’t panic however.
+* Those starting with `backtrace_` and `DW_`. These are yet another names from libbacktrace, a library to produce stack trace. Rust uses it to print a helpful backtrace on panic (available with `RUST_BACKTRACE=1` environment). We don’t panic ourselves however.
 
 * Those starting with `_ZN`. They are “mangled” names from Rust standard libraries.
 
@@ -216,7 +216,7 @@ Okay! We have down from 600 whooping kilobytes to about 120 KB. Jemalloc indeed 
 
 ## No panic, no gain
 
-We are now left with libbacktrace. We don’t panic so we don’t need to print a backtrace, right? Well, we have reached a limit: libbacktrace is deeply integrated to the standard library, and the only way to avoid it is not to use libstd. Quite a dead end.
+We are now left with libbacktrace. We don’t panic ourselves so we don’t need to print a backtrace, right? Well, we have reached a limit: libbacktrace is deeply integrated to the standard library, and the only way to avoid it is not to use libstd. Quite a dead end.
 
 But that is not the end of story. Panicking gives us a backtrace, but also an ability to unwind anything. And unwinding is supported by yet another bit of code called libunwind. It turns out that we *can* get rid of this by disabling unwinding. Put this to Cargo.toml:
 
@@ -313,7 +313,7 @@ $ ls -al target/x86_64-unknown-linux-musl/release/hello
 -rwxrwxr-x 1 lifthrasiir 165448 May 31 21:07 target/x86_64-unknown-linux-musl/release/hello*
 ```
 
-Okay, so this finally looks fair. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out.
+Okay, so this finally looks fair. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out. Well, at least this is one time cost per executable, so practically they wouldn’t matter much anyway.
 
 There is yet another approach for the fairness. What if we can use dynamic linkage for Rust? This completely ruins the distribution until every OS ships with Rust standard library, but well, worth trying. Note that LTO, custom allocator and different panic strategy is not compatible to dynamic linkage, so you have to revert them first.
 
