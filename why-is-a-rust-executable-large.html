@@ -28,20 +28,20 @@
     <blockquote>
 <p>Do you want tl;dr? <a href="#takeaway">Go to the end of post.</a></p>
 </blockquote>
-<p>Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve got tired of those languages, there may be multiple valid reasons, and heard of a trendy new programming language called <a href="https://rust-lang.org/">Rust</a>. Looking at some webpages and the <a href="https://user.rust-lang.org/">official forum</a>, it looks great and you decide to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to <a href="https://rustup.rs/">rustup</a> the problem seems gone by now. Cargo seems to be great, so you follow the <a href="https://doc.rust-lang.org/book/">first sections of the Book</a> and put a small greeting to the new language:</p>
+<p>Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve gotten tired of those languages, for multiple valid reasons, and heard of a trendy new programming language called <a href="https://rust-lang.org/">Rust</a>. Looking at some webpages and the <a href="https://user.rust-lang.org/">official forum</a>, it looks great and you decide to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to <a href="https://rustup.rs/">rustup</a> that problem seems gone  now. Cargo seems to be great, so you follow the <a href="https://doc.rust-lang.org/book/">first sections of the Book</a> and put together a small greeting to the new language:</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Hello, world!&quot;</span><span class="p">);</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
 </pre></div>
 
 
-<p>Amazingly <code>cargo run</code> runs without a hassle. It is kind of a miracle as you used to configure the build script, Makefile, projects or whatever before building things. Impressed, you realize that the executable is available in <code>target/debug/hello</code>. You instinctively type <code>ls -al</code> out (or is it <code>dir</code>?) and you cannot believe your eyes:</p>
+<p>Amazingly <code>cargo run</code> runs without a hassle. It is kind of a miracle as you are used to configuring a build script, Makefile, project, or whatever before building things. Impressed, you notice that the executable is available in <code>target/debug/hello</code>. You instinctively type out <code>ls -al</code> (or is it <code>dir</code>?) and you cannot believe your eyes:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> ls -al target/debug/hello
 <span class="go">-rwxrwxr-x 1 lifthrasiir 650711 May 31 20:00 target/debug/hello*</span>
 </pre></div>
 
 
-<p>650 <em>kilobytes</em> to print anything?! You remember that Rust is probably a sole language that may possibly displace C++, and C++ is noted of the code bloat; would that mean Rust failed to fix one of C++’s big problems? Out of curiosity, you make the same program in C and compile it. The result is eye-opening:</p>
+<p>650 <em>kilobytes</em> to print anything?! You remember that Rust is probably the sole language that may possibly displace C++, and C++ is noted for its code bloat; would that mean Rust failed to fix one of C++’s big problems? Out of curiosity, you make the same program in C and compile it. The result is eye-opening:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cat hello-c.c
 <span class="gp">#</span>include &lt;stdio.h&gt;
 <span class="go">int main() {</span>
@@ -53,7 +53,7 @@
 </pre></div>
 
 
-<p><em>Maybe C has a benefit of having bare-metal libraries</em>, you think. This time you try a C++ program using <code>iostream</code>, which should be much safer than C’s naive <code>printf</code>. But surprisingly it still seems tiny compared to Rust:</p>
+<p><em>Maybe C has the benefit of having bare-metal libraries</em>, you think. This time you try a C++ program using <code>iostream</code>, which should be much safer than C’s naive <code>printf</code>. But surprisingly it still seems tiny compared to Rust:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cat hello-cpp.cpp
 <span class="gp">#</span>include &lt;iostream&gt;
 <span class="go">using namespace std;</span>
@@ -68,24 +68,24 @@
 
 <p>What is wrong with Rust?</p>
 <hr />
-<p>It seems that the surprisingly large size of Rust binary is a massive concern for many. This question is by no means new; there is a well-known, albeit year-old, <a href="https://stackoverflow.com/questions/29008127/why-are-rust-executables-so-huge">question</a> on StackOverflow, and searching for <a href="https://duckduckgo.com/?q=why+is+rust+binary+large">“why is rust binary large”</a> gives several more. Given the frequency of such questions, it is a bit surprising that we don’t yet have a definitive article or page dealing with them. So this is my attempt to provide one.</p>
-<p>Just to be cautious: Is it a valid question to ask after all? We have hundreds of gigabytes of storage, if not some terabytes, and people should be using decent ISPs nowadays, so the binary size should not be a concern, right? The answer is that it still may matter (though not as much as before):</p>
+<p>It seems that the surprisingly large size of a Rust binary is a massive concern for many. This question is by no means new; there is a well-known, albeit year-old, <a href="https://stackoverflow.com/questions/29008127/why-are-rust-executables-so-huge">question</a> on StackOverflow, and searching for <a href="https://duckduckgo.com/?q=why+is+rust+binary+large">“why is rust binary large”</a> gives several more. Given the frequency of such questions, it is a bit surprising that we don’t yet have a definitive article or page dealing with them. So this is my attempt to provide one.</p>
+<p>Just to be cautious: Is it a valid question to ask in the first place? We have hundreds of gigabytes of storage, if not terabytes, and people should be using decent ISPs nowadays, so the binary size should not be a concern, right? The answer is that it may still matter (though not as much as before):</p>
 <ul>
 <li>
-<p><a href="https://www.akamai.com/us/en/our-thinking/state-of-the-internet-report/state-of-the-internet-connectivity-visualization.jsp">Akamai State of the Internet</a> shows that, while more than 80% of users enjoy 4Mbps or more in developed countries much less users do in developing countries. The average connection has been improved much (almost every country is now past 1Mbps average), but the entire distribution is still stagnating. I was fortunate that I’m in the country where gigabit ethernet only costs $30/mo (!), but many others may not.</p>
+<p><a href="https://www.akamai.com/us/en/our-thinking/state-of-the-internet-report/state-of-the-internet-connectivity-visualization.jsp">Akamai State of the Internet</a> shows that, while more than 80% of users enjoy 4Mbps or more in developed countries, far fewer users do in developing countries. The average connection has improved a lot (almost every country is now past 1Mbps average), but the entire distribution is still stagnating. I'm fortunate enough to be in a country where gigabit ethernet only costs $30/mo (!), but many others may not be.</p>
 </li>
 <li>
-<p>Ordinary consumers have only shallow understanding of computing, and they likely to relate any problem with anything they know of: one of the common sentiments is that the executable bloat causes slowdown. That’s unfortunate but true, and you would want to avoid that sentiment.</p>
+<p>Ordinary consumers have only a shallow understanding of computing, and they are likely to relate any problem they encounter with anything they know of.  One of the common sentiments is that the executable bloat causes slowdown. That’s unfortunate but true, and you would want to avoid that sentiment.</p>
 </li>
 </ul>
 <p>For wondering readers: All examples are tested in Rust 1.9.0 and 1.11.0-nightly (<code>a967611d8</code> 2016-05-30). Unless noted, the primary operating system used is Linux 3.13.0 on x86-64. Your mileage may vary.</p>
 <h2>Optimization Level</h2>
-<p>If one were asked about the above, virtually every experienced Rust user would ask you back:</p>
+<p>If asked about the above, virtually every experienced Rust user would ask you back:</p>
 <blockquote>
 <p>Have you enabled the release build?</p>
 </blockquote>
-<p>It turns out that Cargo distinguishes the debug build (default) from the release build (<code>--release</code>). The <a href="http://doc.crates.io/manifest.html#the-profile-sections">Cargo documentation</a> explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimization. It is not default because, well, the debug build is more frequently requested than the release build.</p>
-<p>Note that Jorge Aparicio has correctly <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3t9yuj">pointed out</a> that the release build does not produce the smallest binary possible. That’s because the release build defaults to the optimization level 3 (<code>-C opt-level=3</code>), which may sacrifice the size for performance. The size-optimizing level (<code>-C opt-level=s</code> or <code>-C opt-level=z</code>) has recently <a href="https://github.com/rust-lang/rust/pull/32386">landed</a>, so you may instead use them later. For now, however, we will stick to the default.</p>
+<p>It turns out that Cargo distinguishes the debug build (default) from the release build (<code>--release</code>). The <a href="http://doc.crates.io/manifest.html#the-profile-sections">Cargo documentation</a> explains the exact differences between them, but in general the release build gets rid of development-only routines and data and enables tons of optimizations. It is not the default because, well, the debug build is more frequently requested than the release build.</p>
+<p>Note that Jorge Aparicio has correctly <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3t9yuj">pointed out</a> that the release build does not produce the smallest possible binary. That’s because the release build defaults to optimization level 3 (<code>-C opt-level=3</code>), which may sacrifice some size for performance. The size-optimizing level (<code>-C opt-level=s</code> or <code>-C opt-level=z</code>) has recently <a href="https://github.com/rust-lang/rust/pull/32386">landed</a>, so you may use that later. For now, however, we'll stick to the default.</p>
 <p>Let’s try the release build!</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo build --release
 <span class="gp">$</span> ls -al target/release/hello
@@ -93,12 +93,12 @@
 </pre></div>
 
 
-<p>And that didn’t really make a difference! This is because the optimization is only run over the user code, and we don’t have much user code. Almost all of the binary is from the standard library, and that doesn’t seem to be what we can do anything...</p>
+<p>And that didn’t really make a difference! This is because the optimization is only run over the user code, and we don’t have much user code. Almost all of the binary is from the standard library, and it's not clear whether we can do anything about that...</p>
 <h2>Link-time Optimization (LTO)</h2>
 <p>…except that we can. Enter the world of link-time optimization.</p>
-<p>So the story is as follows: We can individually optimize each crate, and in fact all standard libraries ship in the optimized form. Once the compiler produces an optimized binary, it gets assembled to a single executable by a program called the “linker”. But we don’t need the entirety of standard library: a simple “Hello, world” program definitely does not need <a href="https://doc.rust-lang.org/std/net/"><code>std::net</code></a> for example. Yet, the linker is so stupid that it won’t try to remove unused parts of crates; it will just paste them.</p>
-<p>There is actually a good reason that the traditional linker behaves so. The linker is commonly used in C and C++ languages among others, and each file is compiled individually. This is a sharp difference from Rust where the entire crate is compiled altogether. Unless required functions are scattered throughout files, the linker can fairly easily get rid of unused files at once. It’s not perfect, but reasonably approximate what we want—removing unused functions. One disadvantage is that the compiler is unable to optimize function calls pointing to other files; it simply lacks a required information.</p>
-<p>C and C++ folks had been fine with that approximation for decades, but in the recent decades they had enough and started to provide an option to enable the <em>link-time optimization</em> (LTO). In this scheme the compiler produces optimized binaries without looking at others, and the linker actively looks at them and tries to optimize binaries. It is much harder than working with (internally simplified) sources, and it blows the compilation time up, but it is worth trying if the smaller and/or faster executable is needed.</p>
+<p>So the story is as follows: We can individually optimize each crate, and in fact all standard libraries ship in the optimized form. Once the compiler produces an optimized binary, it gets assembled to a single executable by a program called “the linker”. But we don’t need the entirety of standard library: a simple “Hello, world” program definitely does not need <a href="https://doc.rust-lang.org/std/net/"><code>std::net</code></a> for example. Yet, the linker is so stupid that it won’t try to remove unused parts of crates; it will just paste them in.</p>
+<p>There is actually a good reason that the traditional linker behaves like this. The linker is commonly used in the C and C++ languages among others, and each file is compiled individually. This is a sharp difference from Rust where the entire crate is compiled altogether. Unless required functions are scattered throughout the files, the linker can fairly easily get rid of unused files all at once. It’s not perfect, but reasonably approximates what we want: removing unused functions. One disadvantage is that the compiler is unable to optimize function calls pointing to other files; it simply lacks the required information.</p>
+<p>C and C++ folks had been fine with that approximation for decades, but in the recent decades they decided they'd had enough and started to provide an option to enable <em>link-time optimization</em> (LTO). In this scheme the compiler produces optimized binaries from each file without looking at others, and then the linker actively looks at them all and tries to optimize the binary. It is much harder than working with (internally simplified) sources, and it hugely increases the compilation time, but it is worth trying if a smaller and/or faster executable is needed.</p>
 <p>So far we have talked about C and C++, but the LTO is much more beneficial for Rust. <code>Cargo.toml</code> has an option to enable LTO:</p>
 <div class="highlight"><pre><span></span><span class="k">[profile.release]</span>
 <span class="na">lto</span> <span class="o">=</span> <span class="s">true</span>
@@ -113,8 +113,8 @@
 
 <p>It had a larger effect than the optimization level, but not much. Maybe it is time to look at the executable itself.</p>
 <h2>So what’s in my executable?</h2>
-<p>There are several tools directly working with the executable, but probably the most useful one is <a href="https://www.gnu.org/software/binutils/">GNU binutils</a>. It is available to every Unix-like systems, and also in the Windows (<a href="https://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/">MinGW</a> has a standalone install for example).</p>
-<p>There are many utilities in binutils, but <code>strings</code> is probably the simplest. It simply crawls the binary to find a sequence of printable characters terminated by a zero byte, a typical representation of C string. Thus it tries to extract readable strings out of the binary, quite helpful for us. So let’s try that, and prepare for the scroll:</p>
+<p>There are several tools for directly working with executables, but the most useful one is probably <a href="https://www.gnu.org/software/binutils/">GNU binutils</a>. It is available for all Unix-like systems and on Windows (<a href="https://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/">MinGW</a> has a standalone install for example).</p>
+<p>There are many utilities in binutils, but <code>strings</code> is probably the simplest. It simply crawls the binary to find a sequence of printable characters terminated by a zero byte, a typical representation of C string. Thus it tries to extract readable strings out of a binary, which is quite helpful for us. So let’s try that, and prepare for the scroll:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> strings target/release/hello <span class="p">|</span> head -n 10
 <span class="go">/lib64/ld-linux-x86-64.so.2</span>
 <span class="go">bki^</span>
@@ -129,7 +129,7 @@
 </pre></div>
 
 
-<p>And, wow, it already has something we haven’t expect, pthread. (More on that later, though.) There are indeed <em>tons</em> of strings in our executable:</p>
+<p>And, wow, it already has something we didn’t expect: pthreads. (More on that later, though.) There are indeed <em>tons</em> of strings in our executable:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> strings target/release/hello <span class="p">|</span> wc -c
 <span class="go">   94339</span>
 </pre></div>
@@ -138,16 +138,16 @@
 <p>Huh, one sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as <code>strings</code> also give many false positives, but there are some significant strings as well:</p>
 <ul>
 <li>
-<p>Those starting with <code>jemalloc_</code> and <code>je_</code>. These are names from <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic <code>malloc</code>/<code>free</code>. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.</p>
+<p>Those starting with <code>jemalloc_</code> and <code>je_</code>. These are names from <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, a high-performance memory allocator. That’s what Rust uses for the memory management, in place of classic <code>malloc</code>/<code>free</code>. It is not a small library, and we don’t do any dynamic allocation by ourselves anyway.</p>
 </li>
 <li>
-<p>Those starting with <code>backtrace_</code> and <code>DW_</code>. These are yet another names from libbacktrace, a library to produce stack trace. Rust uses it to print a helpful backtrace on panic (available with <code>RUST_BACKTRACE=1</code> environment). We don’t panic ourselves however.</p>
+<p>Those starting with <code>backtrace_</code> and <code>DW_</code>. These are yet more names from libbacktrace, a library to produce stack trace. Rust uses it to print a helpful backtrace on panic (available with <code>RUST_BACKTRACE=1</code> environment). However, we don’t panic.</p>
 </li>
 <li>
-<p>Those starting with <code>_ZN</code>. They are “mangled” names from Rust standard libraries.</p>
+<p>Those starting with <code>_ZN</code>. These are “mangled” names from Rust standard libraries.</p>
 </li>
 </ul>
-<p>Why do we have those strings at first place? They are debug symbols, which give an appropriate (possibly human-readable) name for otherwise machine-processed binary. Do you remember libbacktrace above? It has to use those debug symbols to print any useful information. Yet, since we are really making a release build we may choose not to include them. (Rust does not have this option by itself, since it is typically stripped by an external utility called <code>strip</code>.) So let’s look at what can be done about them.</p>
+<p>Why do we have those strings in the first place? They are debug symbols, which give an appropriate (possibly human-readable) name for the otherwise-machine-processed binary. Do you remember libbacktrace above? It needs those debug symbols to print any useful information. Yet, since we are really making a release build we may choose not to include them. Rust itself doesn't have this option, since they are typically stripped by an external utility called <code>strip</code>.  So let’s look at what can be done about them.</p>
 <h2>Debug symbols, get off my lawn!</h2>
 <p>So we have three goals: no jemalloc, no libbacktrace, and no debug symbols. I’ve mentioned that <code>strip</code> strips debug symbols, so let’s do that first. Note that <code>strip</code> also comes with binutils, so you can just run that.</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> strip target/release/hello
@@ -158,7 +158,7 @@
 </pre></div>
 
 
-<p>Now that IS smaller! About a half of the entire executable was for debugging symbols. Now that, having stripped our symbols, we cannot have a nice backtrace nor panic recovery:</p>
+<p>Now that IS smaller! About a half of the entire executable was for debugging symbols. Note that, having stripped our symbols, we cannot have a nice backtrace nor panic recovery:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> sed -i.bak s/println/panic/ src/main.rs
 <span class="gp">$</span> cat src/main.rs
 <span class="go">fn main() {</span>
@@ -171,14 +171,14 @@
 <span class="go">stack backtrace:</span>
 <span class="go">   1:     0x7fde451c1e41 - &lt;unknown&gt;</span>
 <span class="go">Illegal instruction</span>
-<span class="gp">$</span> mv src/main.rs.bak src/main.rs     <span class="c1"># tidy it up</span>
+<span class="gp">$</span> mv src/main.rs.bak src/main.rs     <span class="c1"># tidy up</span>
 </pre></div>
 
 
 <p>…and it somehow aborted. Probably a libbacktrace issue, I don’t know, but that doesn’t harm much anyway.</p>
 <h2>Knocking jemalloc down</h2>
-<p>We have knocked debug symbols down, now let’s get rid of remaining libraries. A bad news: From this point you are entering the realm of nightly Rust. The realm is not as scary as you think, as it does not break at your face, but it may break in smaller ways (that’s why we have nightlies!). That’s the major reason that we don’t yet have nightly features in stable, they may change. Fortunately features we are going to use have been quite stable and you can probably follow the remainder of this post with more recent nightlies. But for the posteriority, I will stick to a particular nightly version.</p>
-<p>A good news: Installing nightlies (either the latest or any specific) is very simple with rustup.</p>
+<p>We have knocked debug symbols down, now let’s get rid of the remaining libraries. Some bad news: From this point on you are entering the realm of nightly Rust. This realm is not as scary as you might think, as it doesn't break in your face, but it may break in smaller ways (which is why we have nightlies!). That’s the major reason that we don’t yet have nightly features in stable– they may change. Fortunately, the features we are going to use have been quite stable and you can probably follow the remainder of this post with more recent nightlies. But for posteriority, I will stick to a particular nightly version.</p>
+<p>Some good news: Installing nightlies (either the latest or any specific version) is very simple with rustup.</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> rustup override <span class="nb">set</span> nightly-2016-05-31
 <span class="gp">$</span> cargo build --release
 <span class="gp">$</span> ls -al target/release/hello
@@ -189,7 +189,7 @@
 </pre></div>
 
 
-<p>Okay, the size hadn’t changed much. Let’s knock jemalloc down first—it is well documented in <a href="https://doc.rust-lang.org/book/custom-allocators.html">the Book</a>, but the gist is that it just takes two additional lines to change an allocator:</p>
+<p>Okay, the size hadn’t changed much since the last time we used <code>strip</code>. Let’s knock jemalloc down first— it is well documented in <a href="https://doc.rust-lang.org/book/custom-allocators.html">the Book</a>, but the gist is that it just takes two additional lines to change an allocator:</p>
 <div class="highlight"><pre><span></span><span class="cp">#![feature(alloc_system)]</span><span class="w"></span>
 <span class="k">extern</span><span class="w"> </span><span class="k">crate</span><span class="w"> </span><span class="n">alloc_system</span><span class="p">;</span><span class="w"></span>
 
@@ -199,7 +199,7 @@
 </pre></div>
 
 
-<p>And that again does make a difference:</p>
+<p>And that makes quite a difference:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo build --release
 <span class="gp">$</span> ls -al target/release/hello
 <span class="go">-rwxrwxr-x 1 lifthrasiir 210364 May 31 20:39 target/release/hello*</span>
@@ -209,10 +209,10 @@
 </pre></div>
 
 
-<p>Okay! We have down from 600 whooping kilobytes to about 120 KB. Jemalloc indeed is a big library; it really has <a href="http://www.canonware.com/download/jemalloc/jemalloc-latest/doc/jemalloc.html">tons of configuration</a> so that you can fine-tune its performance, and that has to go somewhere.</p>
+<p>Okay! We are down from 600 whooping kilobytes to about 120 KB. Jemalloc indeed is a big library; it really has <a href="http://www.canonware.com/download/jemalloc/jemalloc-latest/doc/jemalloc.html">tons of configuration</a> so that you can fine-tune its performance, and that has to go somewhere.</p>
 <h2>No panic, no gain</h2>
-<p>We are now left with libbacktrace. We don’t panic ourselves so we don’t need to print a backtrace, right? Well, we have reached a limit: libbacktrace is deeply integrated to the standard library, and the only way to avoid it is not to use libstd. Quite a dead end.</p>
-<p>But that is not the end of story. Panicking gives us a backtrace, but also an ability to unwind anything. And unwinding is supported by yet another bit of code called libunwind. It turns out that we <em>can</em> get rid of this by disabling unwinding. Put this to Cargo.toml:</p>
+<p>We are now left with libbacktrace. Our code doesn't panic, so we don’t need to print a backtrace, right? Well, we have reached a limit: libbacktrace is deeply integrated into the standard library, and the only way to avoid it is to not use libstd. Quite a dead end.</p>
+<p>But that is not the end of story. Panicking gives us a backtrace, but also the ability to unwind anything. And unwinding is supported by yet another bit of code called libunwind. It turns out that we <em>can</em> get rid of this by disabling unwinding. Put this into <code>Cargo.toml</code>:</p>
 <div class="highlight"><pre><span></span><span class="k">[profile.release]</span>
 <span class="na">lto</span> <span class="o">=</span> <span class="s">true</span>
 <span class="na">panic</span> <span class="o">=</span> <span class="s">&#39;abort&#39;</span>
@@ -231,7 +231,7 @@
 
 <p><strong>And that’s it!</strong> It is about the end of story if you don’t want to change the code.</p>
 <h2>Intermission: Linkage</h2>
-<p>Before looking at more obscure area, it is perfect time to admit that I was cheating with the size of C and C++ binaries. The <em>fair</em> (well, fair<em>er</em>) comparison would be as follows:</p>
+<p>Before looking at more obscure areas, this is perfect time to admit that I was cheating with the size of C and C++ binaries. The <em>fair</em> (well, fair<em>er</em>) comparison would be as follows:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> touch *.c *.cpp
 <span class="gp">$</span> make hello-c <span class="nv">CFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -Wl,--gc-sections -static -s&#39;</span>
 <span class="go">cc -Os -flto -Wl,--gc-sections -static    hello-c.c   -o hello-c</span>
@@ -243,8 +243,8 @@
 </pre></div>
 
 
-<p>(Note all the options required to be in line with Rust equivalents. <code>-Wl,--gc-sections</code> is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just remove unused code sections—huge thanks to <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5">Alexis Beingessner and Corey Richardson</a> for pointing out it was missing. Rust has that implied by default, and it can be applied independently from LTO, so a fair comparison also needs that.)</p>
-<p>Also the Rust binary needs to be rebuilt:</p>
+<p>(Note: all these options are required to be in line with Rust equivalents. <code>-Wl,--gc-sections</code> is probably the only option missing; it is a simple-minded cousin of LTO which does not optimize but just removes unused code sections—huge thanks to <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/d3tb8v5">Alexis Beingessner and Corey Richardson</a> for pointing out that it was missing. Rust has that implied by default, and it can be applied independently from LTO, so a fair comparison also needs that.)</p>
+<p>Also, the Rust binary needs to be rebuilt:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo rustc --release -- -C link-args<span class="o">=</span>-static
 <span class="gp">$</span> strip target/release/hello
 <span class="gp">$</span> ls -al target/release/hello
@@ -252,10 +252,10 @@
 </pre></div>
 
 
-<p>Okay, so it seems that Rust was actually far, <em>far</em> better than C and C++. But… why is it “fair”? Isn’t an 1 MB executable too much for such a simple program regardless of the language?</p>
-<p>A binary executable is not a simple data format. It is normally processed and often altered by an OS routine called a “dynamic linker” (not to be confused an aforementioned “linker”). The use of dynamic linker allows programs to <em>dynamically</em> link to other (often common) libraries including the system ones, and until now we was implicitly linking to the C and C++’s standard libraries—glibc and libstdc++ in this case! Rust does not (well, almost) make use of them however, so the entire comparison was unfair to Rust.</p>
-<p>This kind of <strong>dynamic linkage</strong> is a double-edged sword. It makes trivial to update libraries used by multiple programs and in theory the total binary size should be reduced. There is a strong minority against dynamic linkage though, as it also makes trivial to <em>break</em> libraries (dynamic linker is not like Cargo, how pity) and its effect on the total binary size has been exaggerated. To elaborate on the latter, earlier in this post I’ve mentioned a problem that the LTO eventually solves, and the dynamic linkage suffers from the same problem but without no solution—LTO on dynamic library would ruin its advantage.</p>
-<p>But in spite of those problems, dynamic linkage remains a popular choice for many platforms and especially C and C++ standard libraries are often only available as a dynamic library. Yeah, we instructed the linker to statically link everything, but <a href="https://stackoverflow.com/questions/8140439/why-would-it-be-impossible-to-fully-statically-link-an-application">glibc lies</a> and some functions still require the dynamic library:</p>
+<p>Okay, so it seems that Rust was actually far, <em>far</em> better than C and C++. But… why is it “fair”? Isn’t a 1 MB executable too much for such a simple program regardless of the language?</p>
+<p>A binary executable is not a simple data format. It is normally processed and often altered by an OS routine called a “dynamic linker” (not to be confused with the aforementioned “linker”). The use of a dynamic linker allows programs to <em>dynamically</em> link to other (often common) libraries including the system ones, and until now we were implicitly linking to C and C++’s standard libraries—glibc and libstdc++ in this case! Rust does not (well, barely) make use of them however, so the entire comparison was unfair to Rust.</p>
+<p>This kind of <strong>dynamic linking</strong> is a double-edged sword. It makes it trivial to update libraries used by multiple programs and in theory the total binary size should be reduced. There is a strong minority against dynamic linkage though, as it also makes it trivial to <em>break</em> libraries (because the dynamic linker is not like Cargo, what a pity) and its effect on the total binary size have been exaggerated. To elaborate on the latter, earlier in this post I’ve mentioned a problem that the LTO eventually solves, and the dynamic linkage suffers from the same problem but without any solution—LTO on dynamic library would ruin its advantage.</p>
+<p>But in spite of those problems, dynamic linking remains a popular choice for many platforms and especially C and C++ standard libraries are often only available as a dynamic library. Yeah, we instructed the linker to statically link everything, but <a href="https://stackoverflow.com/questions/8140439/why-would-it-be-impossible-to-fully-statically-link-an-application">glibc lies</a> and some functions still require dynamic libraries:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> <span class="c1"># restore debug symbols</span>
 <span class="gp">$</span> touch *.c
 <span class="gp">$</span> make hello-c <span class="nv">CFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -static&#39;</span>
@@ -272,8 +272,8 @@
 </pre></div>
 
 
-<p>It is actually a clever way to make a near-static library with some dynamic-only features (iconv for example). Of course, if you depend on those features you are doomed. That aside, however, you need to enable static linkage in the linker side to avoid biases; <code>-static</code> linker option is therefore necessary. It is very interesting to see that the Rust binary is actually <em>smaller</em> after the static linkage. It does depend on the C standard library but only a little bit (standard I/O completely bypasses <code>stdio</code>, for example), so it did manage to escape the weight of glibc somehow.</p>
-<p>The picture has changed so much that the comparison still looks biased. It is all a fault of glibc after all! There are several libc alternatives, and <a href="https://www.musl-libc.org/">musl</a> is a promising one. It results in very compact binary even after static linkage:</p>
+<p>It is actually a clever way to make a near-static library with some dynamic-only features (iconv for example). Of course, if you depend on those features you are doomed. That aside, however, you need to enable static linking in the linker side to avoid biases; the <code>-static</code> linker option is therefore necessary. It is very interesting to see that the Rust binary is actually <em>smaller</em> after the static linking. It does depend on the C standard library but only on a little bit (standard I/O completely bypasses <code>stdio</code>, for example), so it did manage to escape the weight of glibc somehow.</p>
+<p>The picture has changed so much that the comparison still looks biased. It is all the fault of glibc after all! There are several libc alternatives, and <a href="https://www.musl-libc.org/">musl</a> is a promising one. It results in very compact binary even after static linkage:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> touch *.c
 <span class="gp">$</span> make hello-c <span class="nv">CFLAGS</span><span class="o">=</span><span class="s1">&#39;-Os -flto -static -s&#39;</span> <span class="nv">CC</span><span class="o">=</span>musl-gcc
 <span class="go">musl-gcc -Os -flto -static -s    hello-c.c   -o hello-c</span>
@@ -294,7 +294,7 @@
 
 
 <p>Okay, so this finally looks fair. The entirety of this 160 KB executable can be properly attributed to Rust’s “bloat”; it contains libbacktrace and libunwind (weighing about 50 KB combined), and libstd is still hard to completely optimize out (having 40 KB of pure Rust code, referencing various bits of libc). This is the status quo of the Rust standard library, and has to be worked out. Well, at least this is one time cost per executable, so practically they wouldn’t matter much anyway.</p>
-<p>There is yet another approach for the fairness. What if we can use dynamic linkage for Rust? This completely ruins the distribution until every OS ships with Rust standard library, but well, worth trying. Note that LTO, custom allocator and different panic strategy is not compatible to dynamic linkage, so you have to revert them first.</p>
+<p>There is yet another approach to being more fair. What if we can use dynamic linking for Rust? This completely ruins the distribution until every OS ships with the Rust standard library, but well, it's worth trying. Note that LTO, the custom allocator, and the different panic strategy are not compatible with dynamic linkage, so you have to leave them as the defaults.</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> cargo rustc --release -- -C prefer-dynamic
 <span class="gp">$</span> ls -al target/release/hello
 <span class="go">-rwxrwxr-x 1 lifthrasiir 8831 May 31 21:10 target/release/hello*</span>
@@ -303,8 +303,8 @@
 
 <p>So this is comparable to ordinary C/C++ programs with dynamic linkage. Mostly a curiosity in this case though.</p>
 <h2>Say goodbye to libstd</h2>
-<p>We have so far looked at reducing the executable size without changing your code a lot. But if you are willing to pay some cost for that, you may result in much smaller executable. Note: This is <em>not</em> recommended in general, this section is going to be a strict cost-effect analysis.</p>
-<p>We all know that libstd is friendly and convenient, but sometimes it is too much (and it is a source of libbacktrace and libunwind that we don’t really use). Start by avoiding libstd first. The Book has a whole section about <a href="https://doc.rust-lang.org/book/no-stdlib.html">no stdlib mode</a>, so let’s follow that. A new source code is as follows:</p>
+<p>We have so far looked at reducing the executable size without changing your code a lot. But if you are willing to pay that cost, it may result in a much smaller executable. Note: This is <em>not</em> recommended in general, this section is going to be a strict cost-effect analysis.</p>
+<p>We all know that libstd is friendly and convenient, but sometimes it is too much (and it is a source of libbacktrace and libunwind that we don’t really use). Start by avoiding libstd. The Book has a whole section about <a href="https://doc.rust-lang.org/book/no-stdlib.html">no stdlib mode</a>, so let’s follow that. The new source code is as follows:</p>
 <div class="highlight"><pre><span></span><span class="cp">#![feature(lang_items, start)]</span><span class="w"></span>
 <span class="cp">#![no_std]</span><span class="w"></span>
 
@@ -312,7 +312,7 @@
 
 <span class="cp">#[start]</span><span class="w"></span>
 <span class="k">fn</span><span class="w"> </span><span class="n">start</span><span class="p">(</span><span class="n">_argc</span><span class="o">:</span><span class="w"> </span><span class="kt">isize</span><span class="p">,</span><span class="w"> </span><span class="n">_argv</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">isize</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="c1">// as we are passing a C string,</span>
+<span class="w">    </span><span class="c1">// since we are passing a C string,</span>
 <span class="w">    </span><span class="c1">// the final null character is mandatory</span>
 <span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">HELLO</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="nb">&#39;static</span><span class="w"> </span><span class="kt">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello, world!</span><span class="se">\n\0</span><span class="s">&quot;</span><span class="p">;</span><span class="w"></span>
 <span class="w">    </span><span class="k">unsafe</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">libc</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="n">HELLO</span><span class="p">.</span><span class="n">as_ptr</span><span class="p">()</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="n">_</span><span class="p">);</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
@@ -324,20 +324,20 @@
 </pre></div>
 
 
-<p>And you need to add a dependency to the <code>libc</code> crate in Cargo.toml:</p>
+<p>And you need to add a dependency to the <code>libc</code> crate in <code>Cargo.toml</code>:</p>
 <div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
 <span class="na">libc</span> <span class="o">=</span> <span class="s">{ version = &quot;0.2&quot;, default-features = false }</span>
 </pre></div>
 
 
-<p>That’s it! It is very close to what you would get with C program: 8503 bytes before <code>strip</code>, 6288 bytes after <code>strip</code>. (I’m tried of faking the console up (note the modified time), so I’ll omit them from now on.) musl goes further, but you need to give an additional option to properly link the <code>libc</code> crate to musl:</p>
+<p>And that’s it! It is very close to what you would get with a C program: 8503 bytes before <code>strip</code>, 6288 bytes after <code>strip</code>. (I’m tried of faking the console output (note the modified time), so I’ll omit them from now on.) musl goes further, but you need to give an additional option to properly link the <code>libc</code> crate to musl:</p>
 <div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">export</span> <span class="nv">RUSTFLAGS</span><span class="o">=</span><span class="s1">&#39;-L native=/usr/lib/x86_64-linux-musl&#39;</span>
 <span class="gp">$</span> cargo build --release --target<span class="o">=</span>x86_64-unknown-linux-musl
 <span class="gp">$</span> strip target/x86_64-unknown-linux-musl/release/hello
 </pre></div>
 
 
-<p>Now we are down to 5360 bytes. Only 32 bytes behind the best C program! How can we do better? Instead of using stdio, you can use the direct system call (in Unix, of course):</p>
+<p>Now we are down to 5360 bytes. Only 32 bytes behind the best C program! How can we do better? Instead of using stdio, you can use the direct system call (on Unix only, of course):</p>
 <div class="highlight"><pre><span></span><span class="cp">#[start]</span><span class="w"></span>
 <span class="k">fn</span><span class="w"> </span><span class="n">start</span><span class="p">(</span><span class="n">_argc</span><span class="o">:</span><span class="w"> </span><span class="kt">isize</span><span class="p">,</span><span class="w"> </span><span class="n">_argv</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">isize</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">HELLO</span><span class="o">:</span><span class="w"> </span><span class="o">&amp;</span><span class="nb">&#39;static</span><span class="w"> </span><span class="kt">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello, world!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span><span class="w"></span>
@@ -350,8 +350,8 @@
 </pre></div>
 
 
-<p>This strips yet another bits of binary and weighs 5072 bytes after <code>strip</code>.</p>
-<p>One may argue that the above is not a real Rust code, but a Rust-esque code depending on Unix system calls. Fine. No real Rust code would look like that. Instead we can make our own <code>Stdout</code> type, wired directly to system calls, and use ordinary formatting macros:</p>
+<p>This strips yet more bits off the binary and weighs 5072 bytes after <code>strip</code>.</p>
+<p>One may argue that the above is not real Rust code, but a Rust-esque code depending on Unix system calls. Fine. No real Rust code would look like that. Instead we can make our own <code>Stdout</code> type, wired directly to system calls, and use ordinary formatting macros:</p>
 <div class="highlight"><pre><span></span><span class="kn">use</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">fmt</span><span class="o">::</span><span class="p">{</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Write</span><span class="p">};</span><span class="w"></span>
 
 <span class="k">struct</span><span class="w"> </span><span class="n">Stdout</span><span class="p">;</span><span class="w"></span>
@@ -379,28 +379,28 @@
 
 <p>This is indeed much more natural Rust code. It weighs 9248 bytes after <code>strip</code>, suggesting that the minimal formatting code costs about 4 KB. Other types impose more overhead though; printing <code>3.14f64</code> for example costs about 25 KB of additional binary, as <a href="https://github.com/rust-lang/rust/pull/24612">floating-to-decimal conversion is hard</a>. Also mind that this never buffers (except for the internal kernel buffer for pipes).</p>
 <h2>And another thing...</h2>
-<p>We can go much further even from this point, our executable still contains seemingly unused chunk of bytes. Welcome to the realm of actual low-level programming (in contrast to <em>lower-level</em> programming we normally do with C/C++). This area has been very thoroughly explored by pioneers however, so I will end the trip by linking to them:</p>
+<p>We can go much further even from this point, since our executable still contains seemingly unused chunk of bytes. Welcome to the realm of actual low-level programming (in contrast to the <em>lower-level</em> programming we normally do with C/C++). This area has been very thoroughly explored by pioneers however, so I will end the trip by linking to them:</p>
 <ul>
 <li>
-<p>Keegan McAllister made a <a href="http://mainisusuallyafunction.blogspot.kr/2015/01/151-byte-static-linux-binary-in-rust.html">151-byte x86-64 Linux program</a> printing “Hello!”. Well, that’s not we wanted though, and the proper “Hello, world!” program will probably cost 165 bytes; the original program (ab)used the ELF header to put the string constant but there is not much space to put a longer “Hello, world!”.</p>
+<p>Keegan McAllister made a <a href="http://mainisusuallyafunction.blogspot.kr/2015/01/151-byte-static-linux-binary-in-rust.html">151-byte x86-64 Linux program</a> printing “Hello!”. Well, that’s not what we wanted, and the proper “Hello, world!” program will probably cost 165 bytes; the original program (ab)used the ELF header to put the string constant there but there isn't much space to put a longer “Hello, world!”.</p>
 </li>
 <li>
-<p>Peter Atashian made a <a href="https://github.com/retep998/hello-rs/blob/master/windows/src/main.rs">1536-byte Windows program</a> printing “Hello world!” (note no comma). I’m less sure about the size of the proper program, but yeah, you have an idea. This is notable because Windows essentially forces you to use dynamic linkage (Windows system call is not stable across versions), and the dynamic symbol table costs bytes.</p>
+<p>Peter Atashian made a <a href="https://github.com/retep998/hello-rs/blob/master/windows/src/main.rs">1536-byte Windows program</a> printing “Hello world!” (note no comma). I’m less sure about the size of the proper program, but yeah, you have an idea. This is notable because Windows essentially forces you to use dynamic linkage (Windows system calls are not stable across versions), and the dynamic symbol table costs bytes.</p>
 </li>
 <li>
-<p>For the comparison and your geeky pleasure, the shortest known version of x86-64 Linux program printing “Hello, world” costs (note no exclamation mark) only <a href="http://www.muppetlabs.com/~breadbox/software/tiny/hello.asm.txt">62 bytes</a>. The general technique is better explained in <a href="http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html">this classical article</a>.</p>
+<p>For the comparison and your geeky pleasure, the shortest known version of a x86-64 Linux program printing “Hello, world” (note no exclamation mark) costs only <a href="http://www.muppetlabs.com/~breadbox/software/tiny/hello.asm.txt">62 bytes</a>. The general technique is better explained in <a href="http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html">this classical article</a>.</p>
 </li>
 <li>
-<p>Hey, I’ve learned the hard way that we have tons of variations over the “Hello, world!” programs, none of those programs print the proper and longest version of greeting!</p>
+<p>Hey, I’ve learned the hard way that we have tons of variations over the “Hello, world!” programs, and none of those programs print the proper and longest version of greeting!</p>
 </li>
 </ul>
-<p><a name="takeaway"></a> This post is intended as a tour to various techniques (not necessarily practical) reducing the program size, but if you demand some conclusion, the pragmatic takeaway is that:</p>
+<p><a name="takeaway"></a> This post is intended as a tour of various techniques (not necessarily all practical) of reducing program size, but if you demand some conclusion, the pragmatic takeaway is that:</p>
 <ul>
 <li>Compile with <code>--release</code>.</li>
-<li>Before the distribution, enable LTO and strip the binary.</li>
+<li>Before distribution, enable LTO and strip the binary.</li>
 <li>If your program is not memory-intensive, use the system allocator (assuming nightly).</li>
 <li>You may be able to use the optimization level <code>s</code>/<code>z</code> in the future as well.</li>
-<li>I didn’t mention this because it doesn’t improve such a small program, but you can also try <a href="http://upx.sourceforge.net/">UPX</a> and other executable compressors if you are working with much larger application.</li>
+<li>I didn’t mention this because it doesn’t improve such a small program, but you can also try <a href="http://upx.sourceforge.net/">UPX</a> and other executable compressors if you are working with a much larger application.</li>
 </ul>
 <p>That’s all, folks!</p>
 </article>
