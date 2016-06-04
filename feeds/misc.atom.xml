@@ -104,12 +104,12 @@
 
 
 &lt;p&gt;And, wow, it already has something we haven’t expect, pthread. (More on that later, though.) There are indeed &lt;em&gt;tons&lt;/em&gt; of strings in our executable:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; strings target/release/hello &lt;span class="p"&gt;|&lt;/span&gt; wc
-&lt;span class="go"&gt;   5893    7027   94339&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="gp"&gt;$&lt;/span&gt; strings target/release/hello &lt;span class="p"&gt;|&lt;/span&gt; wc -c
+&lt;span class="go"&gt;   94339&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;94339 printable bytes and 5893 zero bytes (one per line) make almost 100 KB. One sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as &lt;code&gt;strings&lt;/code&gt; also give many false positives, but there are some significant strings as well:&lt;/p&gt;
+&lt;p&gt;Huh, one sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as &lt;code&gt;strings&lt;/code&gt; also give many false positives, but there are some significant strings as well:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
 &lt;p&gt;Those starting with &lt;code&gt;jemalloc_&lt;/code&gt; and &lt;code&gt;je_&lt;/code&gt;. These are names from &lt;a href="http://www.canonware.com/jemalloc/"&gt;jemalloc&lt;/a&gt;, a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic &lt;code&gt;malloc&lt;/code&gt;/&lt;code&gt;free&lt;/code&gt;. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.&lt;/p&gt;

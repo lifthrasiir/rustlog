@@ -130,12 +130,12 @@
 
 
 <p>And, wow, it already has something we haven’t expect, pthread. (More on that later, though.) There are indeed <em>tons</em> of strings in our executable:</p>
-<div class="highlight"><pre><span></span><span class="gp">$</span> strings target/release/hello <span class="p">|</span> wc
-<span class="go">   5893    7027   94339</span>
+<div class="highlight"><pre><span></span><span class="gp">$</span> strings target/release/hello <span class="p">|</span> wc -c
+<span class="go">   94339</span>
 </pre></div>
 
 
-<p>94339 printable bytes and 5893 zero bytes (one per line) make almost 100 KB. One sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as <code>strings</code> also give many false positives, but there are some significant strings as well:</p>
+<p>Huh, one sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as <code>strings</code> also give many false positives, but there are some significant strings as well:</p>
 <ul>
 <li>
 <p>Those starting with <code>jemalloc_</code> and <code>je_</code>. These are names from <a href="http://www.canonware.com/jemalloc/">jemalloc</a>, a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic <code>malloc</code>/<code>free</code>. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.</p>
