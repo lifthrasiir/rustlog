@@ -128,11 +128,11 @@ pthread_self
 And, wow, it already has something we haven’t expect, pthread. (More on that later, though.) There are indeed *tons* of strings in our executable:
 
 ```console
-$ strings target/release/hello | wc
-   5893    7027   94339
+$ strings target/release/hello | wc -c
+   94339
 ```
 
-94339 printable bytes and 5893 zero bytes (one per line) make almost 100 KB. One sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as `strings` also give many false positives, but there are some significant strings as well:
+Huh, one sixth of our executable is for strings we don’t really use! At the closer inspection, this observation is not correct as `strings` also give many false positives, but there are some significant strings as well:
 
 * Those starting with `jemalloc_` and `je_`. These are names from [jemalloc](http://www.canonware.com/jemalloc/), a high-performance memory allocator. So that’s what Rust uses for the memory management, in place of classic `malloc`/`free`. It is not a small library however, and we don’t do the dynamic allocation by ourselves anyway.
 
