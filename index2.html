@@ -28,8 +28,11 @@
 <time datetime="2016-06-02T23:58:00+09:00">2016-06-02 23:58 +09:00</time>            </header>
 
             <article>
-                <blockquote>
-<p>Do you want tl;dr? <a href="#takeaway">Go to the end of post.</a></p>
+                <p><strong>Update (2016-10-07):</strong> The <a href="https://www.rust-lang.org/en-US/faq.html">official FAQ</a> has <a href="https://www.rust-lang.org/en-US/faq.html#why-do-rust-programs-use-more-memory-than-c">an entry for this exact problem</a> now. I'll leave this post as more curiously minded people.</p>
+<p>See also the <a href="https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/">/r/rust discussion</a> at the time of writing.</p>
+<hr />
+<blockquote>
+<p>Do you want a quick takeaway? <a href="#takeaway">Go to the end of post.</a></p>
 </blockquote>
 <p>Suppose that you are a programmer primarily working with compiled languages. Somehow you’ve gotten tired of those languages, for multiple valid reasons, and heard of a trendy new programming language called <a href="https://rust-lang.org/">Rust</a>. Looking at some webpages and the <a href="https://user.rust-lang.org/">official forum</a>, it looks great and you decide to try it out. It seems that Rust was a bit cumbersome to install in the past, but thanks to <a href="https://rustup.rs/">rustup</a> that problem seems gone  now. Cargo seems to be great, so you follow the <a href="https://doc.rust-lang.org/book/">first sections of the Book</a> and put together a small greeting to the new language:</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
