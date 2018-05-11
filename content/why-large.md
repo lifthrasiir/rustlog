@@ -1,7 +1,7 @@
 Title: Why is a Rust executable large?
 Date: 2016-06-02 23:58
 
-**Update (2016-10-07):** The [official FAQ](https://www.rust-lang.org/en-US/faq.html) has [an entry for this exact problem](https://www.rust-lang.org/en-US/faq.html#why-do-rust-programs-use-more-memory-than-c) now. I'll leave this post as more curiously minded people.
+**Update (2016-10-07):** The [official FAQ](https://www.rust-lang.org/en-US/faq.html) has [an entry for this exact problem](https://www.rust-lang.org/en-US/faq.html#why-do-rust-programs-have-larger-binary-sizes-than-C-programs) now. I'll leave this post as more curiously minded people.
 
 See also the [/r/rust discussion](https://www.reddit.com/r/rust/comments/4m7kha/rustlog_why_is_a_rust_executable_large/) and [Hacker News thread](https://news.ycombinator.com/item?id=11823949) at the time of writing.
 
